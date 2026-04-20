@@ -120,6 +120,13 @@ class HomeScreen extends IPSModuleStrict
                             'add'     => 0,
                             'edit'    => ['type' => 'SelectVariable'],
                         ],
+                        [
+                            'caption' => 'Ziel-Objekt (Klick auf Karte)',
+                            'name'    => 'LinkID',
+                            'width'   => '220px',
+                            'add'     => 0,
+                            'edit'    => ['type' => 'SelectObject'],
+                        ],
                     ],
                 ],
             ],
@@ -192,6 +199,8 @@ class HomeScreen extends IPSModuleStrict
   .group-title:first-child { margin-top: 2px; }
   .grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 2px; }
   .card { background: var(--card-bg); border-radius: 7px; padding: 9px 11px; flex: 1 1 140px; max-width: 210px; border: 1px solid var(--border); }
+  .card.clickable { cursor: pointer; }
+  .card.clickable:hover { border-color: rgba(128,128,128,0.4); filter: brightness(1.05); }
   .card-title { font-size: 0.85em; font-weight: 600; color: var(--title); margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px solid var(--divider); }
   .row { display: flex; align-items: center; gap: 5px; padding: 2px 0; font-size: 0.78em; }
   .icon { font-size: 0.95em; width: 17px; text-align: center; flex-shrink: 0; }
@@ -308,6 +317,13 @@ HTML;
             $content = "<div style='color:var(--empty);font-size:0.82em;padding:4px 0;'>Keine Variablen konfiguriert</div>";
         }
 
-        return "<div class='card'><div class='card-title'>{$name}</div>{$content}</div>";
+        $linkID = (int)($raum['LinkID'] ?? 0);
+        if ($linkID > 0) {
+            $onclick = " class='card clickable' onclick='openObject({$linkID})'";
+        } else {
+            $onclick = " class='card'";
+        }
+
+        return "<div{$onclick}><div class='card-title'>{$name}</div>{$content}</div>";
     }
 }
