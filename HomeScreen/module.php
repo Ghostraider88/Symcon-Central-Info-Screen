@@ -4,13 +4,18 @@ declare(strict_types=1);
 
 class HomeScreen extends IPSModuleStrict
 {
+    // -------------------------------------------------------------------------
+    // Lifecycle
+    // -------------------------------------------------------------------------
+
     public function Create(): void
     {
         parent::Create();
 
         $this->RegisterPropertyString('Raeume', '[]');
 
-        $this->RegisterVariableString('Uebersicht', 'Raumübersicht', '~HTMLBox');
+        // Modul stellt eine eigene Visualisierung bereit (wie Da8ter-Stil)
+        $this->SetVisualizationType(1);
 
         $this->RegisterTimer('RefreshTimer', 0, 'HomeScreen_Update($_IPS[\'TARGET\']);');
     }
@@ -19,21 +24,31 @@ class HomeScreen extends IPSModuleStrict
     {
         parent::ApplyChanges();
 
-        // Alle bestehenden Nachrichten abmelden
+        // Referenzen zurücksetzen
+        foreach ($this->GetReferenceList() as $ref) {
+            $this->UnregisterReference($ref);
+        }
+
+        // Nachrichten abmelden
         foreach ($this->GetMessageList() as $senderID => $messages) {
             foreach ($messages as $message) {
                 $this->UnregisterMessage($senderID, $message);
             }
         }
 
-        // Auf Änderungen aller konfigurierten Variablen reagieren
+        // Auf Änderungen aller konfigurierten Variablen reagieren + Referenzen registrieren
         $raeume = json_decode($this->ReadPropertyString('Raeume'), true) ?? [];
         $varIDs = [];
         foreach ($raeume as $raum) {
+            $linkID = (int)($raum['LinkID'] ?? 0);
+            if ($linkID > 0) {
+                $this->RegisterReference($linkID);
+            }
             foreach (['LichtID', 'FensterID', 'TempID', 'HumID', 'CO2ID'] as $key) {
                 $id = (int)($raum[$key] ?? 0);
                 if ($id > 0 && IPS_VariableExists($id)) {
                     $varIDs[] = $id;
+                    $this->RegisterReference($id);
                 }
             }
         }
@@ -41,159 +56,45 @@ class HomeScreen extends IPSModuleStrict
             $this->RegisterMessage($id, VM_UPDATE);
         }
 
-        // Alle 5 Minuten automatisch aktualisieren
         $this->SetTimerInterval('RefreshTimer', 5 * 60 * 1000);
 
-        $this->Update();
+        $this->UpdateVisualizationValue($this->GetUpdatePayload());
     }
 
     public function MessageSink(int $TimeStamp, int $SenderID, int $Message, array $Data): void
     {
         if ($Message === VM_UPDATE) {
-            $this->Update();
+            $this->UpdateVisualizationValue($this->GetUpdatePayload());
         }
     }
 
     public function Update(): void
     {
-        $raeume = json_decode($this->ReadPropertyString('Raeume'), true) ?? [];
-        $this->SetValue('Uebersicht', $this->BuildHTML($raeume));
+        $this->UpdateVisualizationValue($this->GetUpdatePayload());
     }
 
-    public function GetConfigurationForm(): string
+    // -------------------------------------------------------------------------
+    // Visualization
+    // -------------------------------------------------------------------------
+
+    public function GetVisualizationTile(): string
     {
+        $initialHandling = '<script>handleMessage(' . $this->GetUpdatePayload() . ');</script>';
+        return $this->GetTileTemplate() . $initialHandling;
+    }
+
+    private function GetUpdatePayload(): string
+    {
+        $raeume = json_decode($this->ReadPropertyString('Raeume'), true) ?? [];
         return json_encode([
-            'elements' => [
-                [
-                    'type'    => 'List',
-                    'name'    => 'Raeume',
-                    'caption' => 'Räume',
-                    'add'     => true,
-                    'delete'  => true,
-                    'columns' => [
-                        [
-                            'caption' => 'Bereich / Stockwerk',
-                            'name'    => 'Bereich',
-                            'width'   => '180px',
-                            'add'     => '',
-                            'edit'    => ['type' => 'ValidationTextBox'],
-                        ],
-                        [
-                            'caption' => 'Raumname',
-                            'name'    => 'Name',
-                            'width'   => '150px',
-                            'add'     => 'Neuer Raum',
-                            'edit'    => ['type' => 'ValidationTextBox'],
-                        ],
-                        [
-                            'caption' => 'Licht',
-                            'name'    => 'LichtID',
-                            'width'   => '180px',
-                            'add'     => 0,
-                            'edit'    => ['type' => 'SelectVariable'],
-                        ],
-                        [
-                            'caption' => 'Licht invertieren',
-                            'name'    => 'LichtInvert',
-                            'width'   => '130px',
-                            'add'     => false,
-                            'edit'    => ['type' => 'CheckBox'],
-                        ],
-                        [
-                            'caption' => 'Fenster',
-                            'name'    => 'FensterID',
-                            'width'   => '180px',
-                            'add'     => 0,
-                            'edit'    => ['type' => 'SelectVariable'],
-                        ],
-                        [
-                            'caption' => 'Fenster invertieren',
-                            'name'    => 'FensterInvert',
-                            'width'   => '140px',
-                            'add'     => false,
-                            'edit'    => ['type' => 'CheckBox'],
-                        ],
-                        [
-                            'caption' => 'Temperatur (°C)',
-                            'name'    => 'TempID',
-                            'width'   => '180px',
-                            'add'     => 0,
-                            'edit'    => ['type' => 'SelectVariable'],
-                        ],
-                        [
-                            'caption' => 'Luftfeuchtigkeit (%)',
-                            'name'    => 'HumID',
-                            'width'   => '180px',
-                            'add'     => 0,
-                            'edit'    => ['type' => 'SelectVariable'],
-                        ],
-                        [
-                            'caption' => 'CO₂ (ppm)',
-                            'name'    => 'CO2ID',
-                            'width'   => '160px',
-                            'add'     => 0,
-                            'edit'    => ['type' => 'SelectVariable'],
-                        ],
-                        [
-                            'caption' => 'Ziel-Objekt (Klick auf Karte)',
-                            'name'    => 'LinkID',
-                            'width'   => '220px',
-                            'add'     => 0,
-                            'edit'    => ['type' => 'SelectObject'],
-                        ],
-                    ],
-                ],
-            ],
-            'actions' => [
-                [
-                    'type'    => 'Button',
-                    'caption' => 'Jetzt aktualisieren',
-                    'onClick' => 'HomeScreen_Update($id);',
-                ],
-            ],
+            'content' => $this->BuildContent($raeume),
+            'footer'  => 'Aktualisiert: ' . date('d.m.Y H:i:s'),
         ]);
     }
 
-    // -------------------------------------------------------------------------
-    // HTML-Generierung
-    // -------------------------------------------------------------------------
-
-    private function BuildHTML(array $raeume): string
+    private function GetTileTemplate(): string
     {
-        $content = '';
-
-        if (empty($raeume)) {
-            $content = '<p class="empty">Keine Räume konfiguriert. Bitte in den Moduleinstellungen Räume hinzufügen.</p>';
-        } else {
-            // Räume nach Bereich gruppieren, Reihenfolge des ersten Auftretens erhalten
-            $gruppen = [];
-            $reihenfolge = [];
-            foreach ($raeume as $raum) {
-                $bereich = trim($raum['Bereich'] ?? '');
-                if (!isset($gruppen[$bereich])) {
-                    $reihenfolge[] = $bereich;
-                    $gruppen[$bereich] = [];
-                }
-                $gruppen[$bereich][] = $raum;
-            }
-
-            foreach ($reihenfolge as $bereich) {
-                if ($bereich !== '') {
-                    $content .= "<div class='group-title'>" . htmlspecialchars($bereich) . "</div>";
-                }
-                $content .= "<div class='grid'>";
-                foreach ($gruppen[$bereich] as $raum) {
-                    $content .= $this->BuildRoomCard($raum);
-                }
-                $content .= "</div>";
-            }
-        }
-
-        $time = date('d.m.Y H:i:s');
-
-        return <<<HTML
-<!DOCTYPE html>
-<html lang="de"><head><meta charset="UTF-8">
+        return <<<'HTML'
 <style>
   :root {
     --bg: #ffffff; --card-bg: #f5f5f5; --text: #333333; --text-muted: #777777;
@@ -213,7 +114,7 @@ class HomeScreen extends IPSModuleStrict
   .group-title:first-child { margin-top: 2px; }
   .grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 2px; }
   .card { background: var(--card-bg); border-radius: 7px; padding: 9px 11px; flex: 1 1 140px; max-width: 210px; border: 1px solid var(--border); }
-  .card.clickable { cursor: pointer; }
+  .card.clickable { cursor: pointer; transition: filter 0.15s, border-color 0.15s; }
   .card.clickable:hover { border-color: rgba(128,128,128,0.4); filter: brightness(1.05); }
   .card-title { font-size: 0.85em; font-weight: 600; color: var(--title); margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px solid var(--divider); }
   .row { display: flex; align-items: center; gap: 5px; padding: 2px 0; font-size: 0.78em; }
@@ -226,17 +127,162 @@ class HomeScreen extends IPSModuleStrict
   .divider { height: 1px; background: var(--divider); margin: 3px 0; }
   .empty { color: var(--empty); padding: 20px; font-size: 0.9em; }
   .footer { margin-top: 8px; font-size: 0.68em; color: var(--footer); text-align: right; }
-</style></head>
-<body>
-{$content}
-<div class="footer">Aktualisiert: {$time}</div>
-</body></html>
+</style>
+<div id="cis-content"></div>
+<div id="cis-footer" class="footer"></div>
+<script>
+function handleMessage(data) {
+    const d = JSON.parse(data);
+    if (d.content !== undefined) {
+        document.getElementById('cis-content').innerHTML = d.content;
+    }
+    if (d.footer !== undefined) {
+        document.getElementById('cis-footer').textContent = d.footer;
+    }
+}
+</script>
 HTML;
+    }
+
+    // -------------------------------------------------------------------------
+    // Konfigurationsformular
+    // -------------------------------------------------------------------------
+
+    public function GetConfigurationForm(): string
+    {
+        return json_encode([
+            'elements' => [
+                [
+                    'type'    => 'List',
+                    'name'    => 'Raeume',
+                    'caption' => 'Räume',
+                    'add'     => true,
+                    'delete'  => true,
+                    'sort'    => ['column' => 'Bereich', 'direction' => 'ascending'],
+                    'columns' => [
+                        [
+                            'caption' => 'Bereich / Stockwerk',
+                            'name'    => 'Bereich',
+                            'width'   => '160px',
+                            'add'     => '',
+                            'edit'    => ['type' => 'ValidationTextBox'],
+                        ],
+                        [
+                            'caption' => 'Raumname',
+                            'name'    => 'Name',
+                            'width'   => '140px',
+                            'add'     => 'Neuer Raum',
+                            'edit'    => ['type' => 'ValidationTextBox'],
+                        ],
+                        [
+                            'caption' => 'Navigation (Klick)',
+                            'name'    => 'LinkID',
+                            'width'   => '200px',
+                            'add'     => 0,
+                            'edit'    => ['type' => 'SelectObject'],
+                        ],
+                        [
+                            'caption' => 'Licht',
+                            'name'    => 'LichtID',
+                            'width'   => '160px',
+                            'add'     => 0,
+                            'edit'    => ['type' => 'SelectVariable'],
+                        ],
+                        [
+                            'caption' => 'Licht inv.',
+                            'name'    => 'LichtInvert',
+                            'width'   => '80px',
+                            'add'     => false,
+                            'edit'    => ['type' => 'CheckBox'],
+                        ],
+                        [
+                            'caption' => 'Fenster',
+                            'name'    => 'FensterID',
+                            'width'   => '160px',
+                            'add'     => 0,
+                            'edit'    => ['type' => 'SelectVariable'],
+                        ],
+                        [
+                            'caption' => 'Fenster inv.',
+                            'name'    => 'FensterInvert',
+                            'width'   => '90px',
+                            'add'     => false,
+                            'edit'    => ['type' => 'CheckBox'],
+                        ],
+                        [
+                            'caption' => 'Temperatur (°C)',
+                            'name'    => 'TempID',
+                            'width'   => '160px',
+                            'add'     => 0,
+                            'edit'    => ['type' => 'SelectVariable'],
+                        ],
+                        [
+                            'caption' => 'Luftfeuchte (%)',
+                            'name'    => 'HumID',
+                            'width'   => '160px',
+                            'add'     => 0,
+                            'edit'    => ['type' => 'SelectVariable'],
+                        ],
+                        [
+                            'caption' => 'CO₂ (ppm)',
+                            'name'    => 'CO2ID',
+                            'width'   => '140px',
+                            'add'     => 0,
+                            'edit'    => ['type' => 'SelectVariable'],
+                        ],
+                    ],
+                ],
+            ],
+            'actions' => [
+                [
+                    'type'    => 'Button',
+                    'caption' => 'Jetzt aktualisieren',
+                    'onClick' => 'HomeScreen_Update($id);',
+                ],
+            ],
+        ]);
+    }
+
+    // -------------------------------------------------------------------------
+    // HTML-Generierung
+    // -------------------------------------------------------------------------
+
+    private function BuildContent(array $raeume): string
+    {
+        if (empty($raeume)) {
+            return '<p class="empty">Keine Räume konfiguriert. Bitte in den Moduleinstellungen Räume hinzufügen.</p>';
+        }
+
+        // Räume nach Bereich gruppieren, Reihenfolge des ersten Auftretens erhalten
+        $gruppen = [];
+        $reihenfolge = [];
+        foreach ($raeume as $raum) {
+            $bereich = trim($raum['Bereich'] ?? '');
+            if (!isset($gruppen[$bereich])) {
+                $reihenfolge[] = $bereich;
+                $gruppen[$bereich] = [];
+            }
+            $gruppen[$bereich][] = $raum;
+        }
+
+        $html = '';
+        foreach ($reihenfolge as $bereich) {
+            if ($bereich !== '') {
+                $html .= "<div class='group-title'>" . htmlspecialchars($bereich) . "</div>";
+            }
+            $html .= "<div class='grid'>";
+            foreach ($gruppen[$bereich] as $raum) {
+                $html .= $this->BuildRoomCard($raum);
+            }
+            $html .= "</div>";
+        }
+
+        return $html;
     }
 
     private function BuildRoomCard(array $raum): string
     {
-        $name      = htmlspecialchars($raum['Name'] ?? 'Unbenannt');
+        $name       = htmlspecialchars($raum['Name'] ?? 'Unbenannt');
         $stateRows  = '';
         $sensorRows = '';
 
@@ -337,13 +383,14 @@ HTML;
             $content = "<div style='color:var(--empty);font-size:0.82em;padding:4px 0;'>Keine Variablen konfiguriert</div>";
         }
 
+        // Navigation via openObject (funktioniert nativ im TileVisu-Kontext)
         $linkID = (int)($raum['LinkID'] ?? 0);
         if ($linkID > 0) {
-            $onclick = " class='card clickable' onclick='window.top.openObject({$linkID})'";
+            $cardAttr = "class='card clickable' onclick='openObject({$linkID})'";
         } else {
-            $onclick = " class='card'";
+            $cardAttr = "class='card'";
         }
 
-        return "<div{$onclick}><div class='card-title'>{$name}</div>{$content}</div>";
+        return "<div {$cardAttr}><div class='card-title'>{$name}</div>{$content}</div>";
     }
 }
