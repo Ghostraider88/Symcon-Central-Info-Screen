@@ -1,0 +1,12 @@
+{
+    "id": "{8C4F1A3D-7B2E-4F96-A8D5-1C0E9F3B7A4D}",
+    "author": "Torsten Wolf",
+    "name": "Central Info Screen",
+    "url": "http://www.wolf-breisach.de",
+    "compatibility": {
+        "version": "8.0"
+    },
+    "version": "1.0",
+    "build": 1,
+    "date": 0
+}

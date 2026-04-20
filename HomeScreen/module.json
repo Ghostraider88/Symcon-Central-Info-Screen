@@ -1,0 +1,15 @@
+{
+    "id": "{D2E7F94A-3B16-4C8E-A591-7F0D2B3E5A8C}",
+    "name": "HomeScreen",
+    "type": 3,
+    "vendor": "",
+    "aliases": [
+        "Home Screen",
+        "Raumübersicht"
+    ],
+    "parentRequirements": [],
+    "childRequirements": [],
+    "implemented": [],
+    "prefix": "HomeScreen",
+    "url": ""
+}
