@@ -133,30 +133,30 @@ class HomeScreen extends IPSModuleStrict
     }
   }
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:6px;font-size:11px;}
-  .grp{margin-bottom:6px;}
-  .grp+.grp{margin-top:8px;}
-  .grp-hdr{display:flex;align-items:center;gap:6px;padding:3px 4px;background:var(--group-bg);border-radius:4px;margin-bottom:4px;}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:10px;font-size:12px;}
+  .grp{margin-bottom:8px;}
+  .grp+.grp{margin-top:10px;}
+  .grp-hdr{display:flex;align-items:center;gap:6px;padding:4px 6px;background:var(--group-bg);border-radius:5px;margin-bottom:5px;}
   .grp-hdr.clickable{cursor:pointer;}
   .grp-hdr.clickable:hover{filter:brightness(0.95);}
-  .grp-name{font-size:0.82em;font-weight:700;color:var(--group-clr);text-transform:uppercase;letter-spacing:0.05em;flex:1;}
+  .grp-name{font-size:0.83em;font-weight:700;color:var(--group-clr);text-transform:uppercase;letter-spacing:0.05em;flex:1;}
   .grp-stats{display:flex;gap:6px;align-items:center;}
-  .grp-stat{font-size:0.78em;color:var(--text-muted);display:flex;align-items:center;gap:2px;white-space:nowrap;}
-  .grid{display:flex;flex-wrap:wrap;gap:4px;}
-  .card{background:var(--card-bg);border-radius:5px;padding:5px 6px;flex:0 1 auto;min-width:90px;max-width:160px;border:1px solid var(--border);}
+  .grp-stat{font-size:0.80em;color:var(--text-muted);display:flex;align-items:center;gap:2px;white-space:nowrap;}
+  .grid{display:flex;flex-wrap:wrap;gap:6px;}
+  .card{background:var(--card-bg);border-radius:6px;padding:7px 9px;flex:0 1 auto;min-width:110px;max-width:185px;border:1px solid var(--border);}
   .card.clickable{cursor:pointer;}
   .card.clickable:hover{filter:brightness(0.97);border-color:rgba(100,100,100,0.3);}
   .c-head{display:flex;justify-content:space-between;align-items:baseline;gap:4px;margin-bottom:3px;}
   .c-name{font-weight:600;color:var(--title);font-size:1.0em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .c-temp{font-weight:600;font-size:0.95em;white-space:nowrap;flex-shrink:0;}
-  .c-rows{display:flex;flex-direction:column;gap:1px;}
+  .c-rows{display:flex;flex-direction:column;gap:2px;}
   .c-row{display:flex;gap:6px;}
   .c-cell{display:flex;align-items:center;gap:2px;white-space:nowrap;flex:1;}
   .ico{font-size:0.9em;flex-shrink:0;}
   .v{font-size:0.88em;}
   .green{color:#4caf50;}.yellow{color:#ff9800;}.red{color:#f44336;}
   .empty{color:var(--empty);padding:10px;font-size:0.9em;}
-  .footer{margin-top:6px;font-size:0.65em;color:var(--footer);text-align:right;}
+  .footer{margin-top:8px;font-size:0.67em;color:var(--footer);text-align:right;}
 </style>
 <div id="cis-content">{$content}</div>
 <div id="cis-footer" class="footer">{$footer}</div>
@@ -176,6 +176,16 @@ HTML;
 
     public function GetConfigurationForm(): string
     {
+        // Bereiche für das Dropdown in der Räume-Liste vorbereiten
+        $bereiche = json_decode($this->ReadPropertyString('Bereiche'), true) ?? [];
+        $bereichOptionen = [['caption' => '– kein Bereich –', 'value' => '']];
+        foreach ($bereiche as $b) {
+            $name = trim($b['Name'] ?? '');
+            if ($name !== '') {
+                $bereichOptionen[] = ['caption' => $name, 'value' => $name];
+            }
+        }
+
         return json_encode([
             'elements' => [
                 [
@@ -184,15 +194,22 @@ HTML;
                     'items'   => [[
                         'type'    => 'List',
                         'name'    => 'Bereiche',
-                        'caption' => 'Bereiche',
+                        'caption' => 'Bereiche (Reihenfolge über Pos.-Nummer)',
                         'add'     => true,
                         'delete'  => true,
                         'columns' => [
                             [
+                                'caption' => 'Pos.',
+                                'name'    => 'Position',
+                                'width'   => '60px',
+                                'add'     => 0,
+                                'edit'    => ['type' => 'NumberSpinner', 'minimum' => 0, 'maximum' => 999],
+                            ],
+                            [
                                 'caption' => 'Name',
                                 'name'    => 'Name',
                                 'width'   => '160px',
-                                'add'     => 'Neuer Bereich',
+                                'add'     => 'Neues Stockwerk',
                                 'edit'    => ['type' => 'ValidationTextBox'],
                             ],
                             [
@@ -233,16 +250,23 @@ HTML;
                     'items'   => [[
                         'type'    => 'List',
                         'name'    => 'Raeume',
-                        'caption' => 'Räume',
+                        'caption' => 'Räume (Reihenfolge über Pos.-Nummer)',
                         'add'     => true,
                         'delete'  => true,
                         'columns' => [
                             [
-                                'caption' => 'Bereich',
+                                'caption' => 'Pos.',
+                                'name'    => 'Position',
+                                'width'   => '60px',
+                                'add'     => 0,
+                                'edit'    => ['type' => 'NumberSpinner', 'minimum' => 0, 'maximum' => 999],
+                            ],
+                            [
+                                'caption' => 'Stockwerk/Bereich',
                                 'name'    => 'Bereich',
-                                'width'   => '140px',
+                                'width'   => '160px',
                                 'add'     => '',
-                                'edit'    => ['type' => 'ValidationTextBox'],
+                                'edit'    => ['type' => 'Select', 'options' => $bereichOptionen],
                             ],
                             [
                                 'caption' => 'Raumname',
@@ -325,11 +349,29 @@ HTML;
     // HTML-Generierung
     // -------------------------------------------------------------------------
 
+    private function SortByPosition(array &$items): void
+    {
+        foreach ($items as $i => &$item) {
+            if (!isset($item['Position']) || (int)$item['Position'] === 0) {
+                // Kein Pos.-Wert → Originalreihenfolge beibehalten (Index-basiert)
+                $item['_sortKey'] = 10000 + $i;
+            } else {
+                $item['_sortKey'] = (int)$item['Position'];
+            }
+        }
+        unset($item);
+        usort($items, fn($a, $b) => $a['_sortKey'] - $b['_sortKey']);
+    }
+
     private function BuildContent(array $bereiche, array $raeume): string
     {
         if (empty($bereiche) && empty($raeume)) {
             return '<p class="empty">Keine Räume konfiguriert.</p>';
         }
+
+        // Reihenfolge per Positions-Nummer steuern
+        $this->SortByPosition($bereiche);
+        $this->SortByPosition($raeume);
 
         // Räume nach Bereich-Name gruppieren (Reihenfolge des ersten Auftretens)
         $raumGruppen = [];
