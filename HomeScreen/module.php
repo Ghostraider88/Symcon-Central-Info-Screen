@@ -339,7 +339,7 @@ HTML;
 
         $linkID = (int)($raum['LinkID'] ?? 0);
         if ($linkID > 0) {
-            $onclick = " class='card clickable' onclick='window.parent.openObject({$linkID})'";
+            $onclick = " class='card clickable' onclick='window.top.openObject({$linkID})'";
         } else {
             $onclick = " class='card'";
         }
