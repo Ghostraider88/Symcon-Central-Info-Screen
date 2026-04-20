@@ -148,20 +148,20 @@ class HomeScreen extends IPSModuleStrict
 <html lang="de"><head><meta charset="UTF-8">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #11111b; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 14px; }
-  .grid { display: flex; flex-wrap: wrap; gap: 14px; }
-  .card { background: #1e1e2e; border-radius: 14px; padding: 18px 20px; flex: 1 1 200px; max-width: 300px; color: #cdd6f4; box-shadow: 0 4px 16px rgba(0,0,0,0.5); }
-  .card-title { font-size: 1.05em; font-weight: 700; color: #cba6f7; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #313244; }
-  .row { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 0.88em; }
+  body { background: #1a1a1a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 14px; }
+  .grid { display: flex; flex-wrap: wrap; gap: 12px; }
+  .card { background: #2d2d2d; border-radius: 8px; padding: 16px 18px; flex: 1 1 200px; max-width: 300px; color: #e0e0e0; border: 1px solid rgba(255,255,255,0.08); }
+  .card-title { font-size: 1.0em; font-weight: 600; color: #ffffff; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .row { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 0.88em; }
   .icon { font-size: 1.1em; width: 22px; text-align: center; flex-shrink: 0; }
-  .label { color: #a6adc8; flex: 1; }
-  .val { font-weight: 700; }
-  .green  { color: #a6e3a1; }
-  .yellow { color: #f9e2af; }
-  .red    { color: #f38ba8; }
-  .divider { height: 1px; background: #313244; margin: 6px 0; }
-  .empty { color: #585b70; padding: 20px; font-size: 0.9em; }
-  .footer { margin-top: 10px; font-size: 0.72em; color: #45475a; text-align: right; padding: 0 4px; }
+  .label { color: #9e9e9e; flex: 1; }
+  .val { font-weight: 600; }
+  .green  { color: #4caf50; }
+  .yellow { color: #ff9800; }
+  .red    { color: #f44336; }
+  .divider { height: 1px; background: rgba(255,255,255,0.08); margin: 6px 0; }
+  .empty { color: #616161; padding: 20px; font-size: 0.9em; }
+  .footer { margin-top: 10px; font-size: 0.72em; color: #616161; text-align: right; padding: 0 4px; }
 </style></head>
 <body>
 <div class="grid">
@@ -266,7 +266,7 @@ HTML;
         $content .= $sensorRows;
 
         if ($content === '') {
-            $content = "<div style='color:#585b70;font-size:0.82em;padding:4px 0;'>Keine Variablen konfiguriert</div>";
+            $content = "<div style='color:#616161;font-size:0.82em;padding:4px 0;'>Keine Variablen konfiguriert</div>";
         }
 
         return "<div class='card'><div class='card-title'>{$name}</div>{$content}</div>";
