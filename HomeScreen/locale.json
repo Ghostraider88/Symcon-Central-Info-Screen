@@ -1,0 +1,17 @@
+{
+    "translations": {
+        "de": {
+            "HomeScreen": "HomeScreen",
+            "Room overview": "Raumübersicht",
+            "Rooms": "Räume",
+            "Room name": "Raumname",
+            "Light (Boolean: On = true)": "Licht (Boolean: Ein = true)",
+            "Window (Boolean: Open = true)": "Fenster (Boolean: Offen = true)",
+            "Temperature (°C)": "Temperatur (°C)",
+            "Humidity (%)": "Luftfeuchtigkeit (%)",
+            "CO2 (ppm)": "CO₂ (ppm)",
+            "Update now": "Jetzt aktualisieren",
+            "New room": "Neuer Raum"
+        }
+    }
+}

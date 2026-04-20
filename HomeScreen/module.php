@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-class HomeScreen extends IPSModule
+class HomeScreen extends IPSModuleStrict
 {
-    public function Create()
+    public function Create(): void
     {
         parent::Create();
 
@@ -15,7 +15,7 @@ class HomeScreen extends IPSModule
         $this->RegisterTimer('RefreshTimer', 0, 'HomeScreen_Update($_IPS[\'TARGET\']);');
     }
 
-    public function ApplyChanges()
+    public function ApplyChanges(): void
     {
         parent::ApplyChanges();
 
@@ -47,20 +47,20 @@ class HomeScreen extends IPSModule
         $this->Update();
     }
 
-    public function MessageSink($TimeStamp, $SenderID, $Message, $Data)
+    public function MessageSink(int $TimeStamp, int $SenderID, int $Message, array $Data): void
     {
         if ($Message === VM_UPDATE) {
             $this->Update();
         }
     }
 
-    public function Update()
+    public function Update(): void
     {
         $raeume = json_decode($this->ReadPropertyString('Raeume'), true) ?? [];
         $this->SetValue('Uebersicht', $this->BuildHTML($raeume));
     }
 
-    public function GetConfigurationForm()
+    public function GetConfigurationForm(): string
     {
         return json_encode([
             'elements' => [
