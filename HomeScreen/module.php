@@ -72,9 +72,16 @@ class HomeScreen extends IPSModuleStrict
                     'delete'  => true,
                     'columns' => [
                         [
+                            'caption' => 'Bereich / Stockwerk',
+                            'name'    => 'Bereich',
+                            'width'   => '180px',
+                            'add'     => '',
+                            'edit'    => ['type' => 'ValidationTextBox'],
+                        ],
+                        [
                             'caption' => 'Raumname',
                             'name'    => 'Name',
-                            'width'   => '160px',
+                            'width'   => '150px',
                             'add'     => 'Neuer Raum',
                             'edit'    => ['type' => 'ValidationTextBox'],
                         ],
@@ -132,13 +139,33 @@ class HomeScreen extends IPSModuleStrict
 
     private function BuildHTML(array $raeume): string
     {
-        $cards = '';
-        foreach ($raeume as $raum) {
-            $cards .= $this->BuildRoomCard($raum);
-        }
+        $content = '';
 
         if (empty($raeume)) {
-            $cards = '<p class="empty">Keine Räume konfiguriert. Bitte in den Moduleinstellungen Räume hinzufügen.</p>';
+            $content = '<p class="empty">Keine Räume konfiguriert. Bitte in den Moduleinstellungen Räume hinzufügen.</p>';
+        } else {
+            // Räume nach Bereich gruppieren, Reihenfolge des ersten Auftretens erhalten
+            $gruppen = [];
+            $reihenfolge = [];
+            foreach ($raeume as $raum) {
+                $bereich = trim($raum['Bereich'] ?? '');
+                if (!isset($gruppen[$bereich])) {
+                    $reihenfolge[] = $bereich;
+                    $gruppen[$bereich] = [];
+                }
+                $gruppen[$bereich][] = $raum;
+            }
+
+            foreach ($reihenfolge as $bereich) {
+                if ($bereich !== '') {
+                    $content .= "<div class='group-title'>" . htmlspecialchars($bereich) . "</div>";
+                }
+                $content .= "<div class='grid'>";
+                foreach ($gruppen[$bereich] as $raum) {
+                    $content .= $this->BuildRoomCard($raum);
+                }
+                $content .= "</div>";
+            }
         }
 
         $time = date('d.m.Y H:i:s');
@@ -147,26 +174,38 @@ class HomeScreen extends IPSModuleStrict
 <!DOCTYPE html>
 <html lang="de"><head><meta charset="UTF-8">
 <style>
+  :root {
+    --bg: #ffffff; --card-bg: #f5f5f5; --text: #333333; --text-muted: #777777;
+    --title: #111111; --border: rgba(0,0,0,0.10); --divider: rgba(0,0,0,0.08);
+    --group-clr: #666666; --empty: #999999; --footer: #bbbbbb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a1a; --card-bg: #2d2d2d; --text: #e0e0e0; --text-muted: #9e9e9e;
+      --title: #ffffff; --border: rgba(255,255,255,0.08); --divider: rgba(255,255,255,0.08);
+      --group-clr: #aaaaaa; --empty: #616161; --footer: #616161;
+    }
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #1a1a1a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 14px; }
-  .grid { display: flex; flex-wrap: wrap; gap: 12px; }
-  .card { background: #2d2d2d; border-radius: 8px; padding: 16px 18px; flex: 1 1 200px; max-width: 300px; color: #e0e0e0; border: 1px solid rgba(255,255,255,0.08); }
-  .card-title { font-size: 1.0em; font-weight: 600; color: #ffffff; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-  .row { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 0.88em; }
-  .icon { font-size: 1.1em; width: 22px; text-align: center; flex-shrink: 0; }
-  .label { color: #9e9e9e; flex: 1; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 10px; }
+  .group-title { font-size: 0.75em; font-weight: 700; color: var(--group-clr); text-transform: uppercase; letter-spacing: 0.06em; margin: 10px 0 5px 2px; }
+  .group-title:first-child { margin-top: 2px; }
+  .grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 2px; }
+  .card { background: var(--card-bg); border-radius: 7px; padding: 9px 11px; flex: 1 1 140px; max-width: 210px; border: 1px solid var(--border); }
+  .card-title { font-size: 0.85em; font-weight: 600; color: var(--title); margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px solid var(--divider); }
+  .row { display: flex; align-items: center; gap: 5px; padding: 2px 0; font-size: 0.78em; }
+  .icon { font-size: 0.95em; width: 17px; text-align: center; flex-shrink: 0; }
+  .label { color: var(--text-muted); flex: 1; }
   .val { font-weight: 600; }
   .green  { color: #4caf50; }
   .yellow { color: #ff9800; }
   .red    { color: #f44336; }
-  .divider { height: 1px; background: rgba(255,255,255,0.08); margin: 6px 0; }
-  .empty { color: #616161; padding: 20px; font-size: 0.9em; }
-  .footer { margin-top: 10px; font-size: 0.72em; color: #616161; text-align: right; padding: 0 4px; }
+  .divider { height: 1px; background: var(--divider); margin: 3px 0; }
+  .empty { color: var(--empty); padding: 20px; font-size: 0.9em; }
+  .footer { margin-top: 8px; font-size: 0.68em; color: var(--footer); text-align: right; }
 </style></head>
 <body>
-<div class="grid">
-{$cards}
-</div>
+{$content}
 <div class="footer">Aktualisiert: {$time}</div>
 </body></html>
 HTML;
@@ -266,7 +305,7 @@ HTML;
         $content .= $sensorRows;
 
         if ($content === '') {
-            $content = "<div style='color:#616161;font-size:0.82em;padding:4px 0;'>Keine Variablen konfiguriert</div>";
+            $content = "<div style='color:var(--empty);font-size:0.82em;padding:4px 0;'>Keine Variablen konfiguriert</div>";
         }
 
         return "<div class='card'><div class='card-title'>{$name}</div>{$content}</div>";
