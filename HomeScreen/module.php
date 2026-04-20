@@ -86,18 +86,32 @@ class HomeScreen extends IPSModuleStrict
                             'edit'    => ['type' => 'ValidationTextBox'],
                         ],
                         [
-                            'caption' => 'Licht (Boolean: Ein = true)',
+                            'caption' => 'Licht',
                             'name'    => 'LichtID',
-                            'width'   => '220px',
+                            'width'   => '180px',
                             'add'     => 0,
                             'edit'    => ['type' => 'SelectVariable'],
                         ],
                         [
-                            'caption' => 'Fenster (Boolean: Offen = true)',
+                            'caption' => 'Licht invertieren',
+                            'name'    => 'LichtInvert',
+                            'width'   => '130px',
+                            'add'     => false,
+                            'edit'    => ['type' => 'CheckBox'],
+                        ],
+                        [
+                            'caption' => 'Fenster',
                             'name'    => 'FensterID',
-                            'width'   => '240px',
+                            'width'   => '180px',
                             'add'     => 0,
                             'edit'    => ['type' => 'SelectVariable'],
+                        ],
+                        [
+                            'caption' => 'Fenster invertieren',
+                            'name'    => 'FensterInvert',
+                            'width'   => '140px',
+                            'add'     => false,
+                            'edit'    => ['type' => 'CheckBox'],
                         ],
                         [
                             'caption' => 'Temperatur (°C)',
@@ -229,7 +243,10 @@ HTML;
         // Licht
         $lichtID = (int)($raum['LichtID'] ?? 0);
         if ($lichtID > 0 && IPS_VariableExists($lichtID)) {
-            $on     = (bool)GetValue($lichtID);
+            $on = (bool)GetValue($lichtID);
+            if ((bool)($raum['LichtInvert'] ?? false)) {
+                $on = !$on;
+            }
             $cls    = $on ? 'yellow' : 'green';
             $status = $on ? 'Eingeschaltet' : 'Aus';
             $stateRows .= "<div class='row'>"
@@ -242,7 +259,10 @@ HTML;
         // Fenster
         $fensterID = (int)($raum['FensterID'] ?? 0);
         if ($fensterID > 0 && IPS_VariableExists($fensterID)) {
-            $open   = (bool)GetValue($fensterID);
+            $open = (bool)GetValue($fensterID);
+            if ((bool)($raum['FensterInvert'] ?? false)) {
+                $open = !$open;
+            }
             $cls    = $open ? 'red' : 'green';
             $status = $open ? 'Geöffnet' : 'Geschlossen';
             $stateRows .= "<div class='row'>"
@@ -319,7 +339,7 @@ HTML;
 
         $linkID = (int)($raum['LinkID'] ?? 0);
         if ($linkID > 0) {
-            $onclick = " class='card clickable' onclick='openObject({$linkID})'";
+            $onclick = " class='card clickable' onclick='window.parent.openObject({$linkID})'";
         } else {
             $onclick = " class='card'";
         }
