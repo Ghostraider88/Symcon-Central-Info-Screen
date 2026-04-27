@@ -140,7 +140,8 @@ class HomeScreen extends IPSModuleStrict
   .grp-hdr.clickable{cursor:pointer;}
   .grp-hdr.clickable:hover{filter:brightness(0.95);}
   .grp-name{font-size:0.80em;font-weight:700;color:var(--group-clr);text-transform:uppercase;letter-spacing:0.05em;flex:1;}
-  .grp-chips{display:flex;gap:3px;align-items:center;flex-wrap:wrap;}
+  .grp-chips{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+  .grp-stat{display:inline-flex;align-items:center;gap:2px;font-size:0.80em;}
   .chip{display:inline-flex;align-items:center;gap:2px;padding:1px 6px;border-radius:8px;font-size:0.75em;font-weight:600;white-space:nowrap;}
   .chip-y{background:rgba(255,152,0,0.20);color:#c97000;}
   .chip-r{background:rgba(244,67,54,0.17);color:#c62828;}
@@ -162,11 +163,12 @@ class HomeScreen extends IPSModuleStrict
   .c-head{display:flex;justify-content:space-between;align-items:baseline;gap:4px;margin-bottom:4px;}
   .c-name{font-weight:600;color:var(--title);font-size:0.95em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .c-temp{font-weight:600;font-size:0.90em;white-space:nowrap;flex-shrink:0;}
-  .c-chips{display:flex;flex-wrap:wrap;gap:2px;}
-  .c-sensors{display:flex;gap:8px;margin-top:2px;}
-  .c-sensor{display:flex;align-items:center;gap:1px;font-size:0.78em;color:var(--text-muted);}
-  .c-sensor.val-g{color:#4caf50;}.c-sensor.val-y{color:#e65c00;}.c-sensor.val-r{color:#e53935;}
-  .green{color:#4caf50;}.yellow{color:#e65c00;}.red{color:#e53935;}
+  .p-row{display:flex;gap:4px;margin-top:2px;}
+  .p-cell{display:flex;align-items:center;gap:2px;font-size:0.82em;flex:1;min-width:0;white-space:nowrap;overflow:hidden;}
+  .p-ico{font-size:0.85em;flex-shrink:0;}
+  .p-none{color:var(--text-muted);font-size:0.82em;}
+  .al-r{color:#e53935;}
+  .al-y{color:#e65c00;}
   .empty{color:var(--empty);padding:10px;font-size:0.9em;}
   .footer{margin-top:8px;font-size:0.67em;color:var(--footer);text-align:right;}
 </style>
@@ -456,57 +458,57 @@ HTML;
             // Licht
             $lichtID = (int)($def['LichtID'] ?? 0);
             if ($lichtID > 0 && IPS_VariableExists($lichtID)) {
-                $val = GetValue($lichtID);
+                $val     = GetValue($lichtID);
                 $varType = IPS_GetVariable($lichtID)['VariableType'];
-                if ($varType === 0) { // Boolean
-                    $cls  = $val ? 'yellow' : 'green';
+                if ($varType === 0) {
+                    $cls  = $val ? " class='al-r'" : '';
                     $text = $val ? 'an' : 'aus';
                 } else {
-                    $cls  = $val > 0 ? 'yellow' : 'green';
+                    $cls  = $val > 0 ? " class='al-r'" : '';
                     $text = $val > 0 ? "{$val} an" : 'aus';
                 }
-                $stats .= "<span class='grp-stat'><span class='ico'>💡</span><span class='v {$cls}'>{$text}</span></span>";
+                $stats .= "<span class='grp-stat'>💡<span{$cls}>{$text}</span></span>";
             }
 
             // Fenster
             $fensterID = (int)($def['FensterID'] ?? 0);
             if ($fensterID > 0 && IPS_VariableExists($fensterID)) {
-                $val = GetValue($fensterID);
+                $val     = GetValue($fensterID);
                 $varType = IPS_GetVariable($fensterID)['VariableType'];
                 if ($varType === 0) {
-                    $cls  = $val ? 'red' : 'green';
+                    $cls  = $val ? " class='al-r'" : '';
                     $text = $val ? 'offen' : 'zu';
                 } else {
-                    $cls  = $val > 0 ? 'red' : 'green';
+                    $cls  = $val > 0 ? " class='al-r'" : '';
                     $text = $val > 0 ? "{$val} offen" : 'alle zu';
                 }
-                $stats .= "<span class='grp-stat'><span class='ico'>🪟</span><span class='v {$cls}'>{$text}</span></span>";
+                $stats .= "<span class='grp-stat'>🪟<span{$cls}>{$text}</span></span>";
             }
 
             // Rolladen
             $rolladenID = (int)($def['RolladenID'] ?? 0);
             if ($rolladenID > 0 && IPS_VariableExists($rolladenID)) {
-                $val = GetValue($rolladenID);
+                $val     = GetValue($rolladenID);
                 $varType = IPS_GetVariable($rolladenID)['VariableType'];
                 if ($varType === 0) {
-                    $cls  = $val ? 'yellow' : 'green';
+                    $cls  = $val ? " class='al-r'" : '';
                     $text = $val ? 'offen' : 'zu';
                 } else {
                     $formatted = GetValueFormatted($rolladenID);
-                    $cls  = $val > 0 ? 'yellow' : 'green';
+                    $cls  = $val > 0 ? " class='al-r'" : '';
                     $text = $formatted;
                 }
-                $stats .= "<span class='grp-stat'><span class='ico'>⬜</span><span class='v {$cls}'>{$text}</span></span>";
+                $stats .= "<span class='grp-stat'>⬜<span{$cls}>{$text}</span></span>";
             }
         }
 
-        $linkID = (int)(($def ?? [])['LinkID'] ?? 0);
-        $clickable = $linkID > 0 ? " clickable' onclick='openObject({$linkID})" : '';
+        $linkID      = (int)(($def ?? [])['LinkID'] ?? 0);
+        $clickable   = $linkID > 0 ? " clickable' onclick='openObject({$linkID})" : '';
         $displayName = $name !== '' ? htmlspecialchars($name) : 'Ohne Bereich';
 
         return "<div class='grp-hdr{$clickable}'>"
             . "<span class='grp-name'>{$displayName}</span>"
-            . ($stats !== '' ? "<span class='grp-stats'>{$stats}</span>" : '')
+            . ($stats !== '' ? "<span class='grp-chips'>{$stats}</span>" : '')
             . "</div>";
     }
 
@@ -514,108 +516,97 @@ HTML;
     {
         $name = htmlspecialchars($raum['Name'] ?? 'Unbenannt');
 
-        // Temperatur (für Header-Zeile)
+        // ── Temperatur ────────────────────────────────────────────────
         $tempStr = '';
         $tempCls = '';
         $tempID  = (int)($raum['TempID'] ?? 0);
         if ($tempID > 0 && IPS_VariableExists($tempID)) {
-            $val = round((float)GetValue($tempID), 1);
-            if ($val >= 19 && $val <= 24) {
-                $tempCls = 'green';
-            } elseif ($val < 17 || $val > 27) {
-                $tempCls = 'red';
-            } else {
-                $tempCls = 'yellow';
-            }
+            $val     = round((float)GetValue($tempID), 1);
+            $tempCls = ($val < 18 || $val > 25) ? ' al-r' : '';
             $tempStr = str_replace('.', ',', (string)$val) . '°';
         }
 
-        // Licht
-        $lichtCell = '';
-        $lichtID   = (int)($raum['LichtID'] ?? 0);
-        if ($lichtID > 0 && IPS_VariableExists($lichtID)) {
+        // ── Licht ─────────────────────────────────────────────────────
+        $lichtID  = (int)($raum['LichtID'] ?? 0);
+        $hasLicht = $lichtID > 0 && IPS_VariableExists($lichtID);
+        $lichtHTML = '';
+        if ($hasLicht) {
             $on = (bool)GetValue($lichtID);
             if ((bool)($raum['LichtInvert'] ?? false)) {
                 $on = !$on;
             }
-            $cls  = $on ? 'yellow' : 'green';
-            $text = $on ? 'an' : 'aus';
-            $lichtCell = "<span class='c-cell'><span class='ico'>💡</span><span class='v {$cls}'>{$text}</span></span>";
+            $cls       = $on ? " class='al-r'" : '';
+            $text      = $on ? 'an' : 'aus';
+            $lichtHTML = "<span class='p-ico'>💡</span><span{$cls}>{$text}</span>";
         }
 
-        // Fenster
-        $fensterCell = '';
-        $fensterID   = (int)($raum['FensterID'] ?? 0);
-        if ($fensterID > 0 && IPS_VariableExists($fensterID)) {
+        // ── Fenster ───────────────────────────────────────────────────
+        $fensterID  = (int)($raum['FensterID'] ?? 0);
+        $hasFenster = $fensterID > 0 && IPS_VariableExists($fensterID);
+        $fensterHTML = '';
+        if ($hasFenster) {
             $open = (bool)GetValue($fensterID);
             if ((bool)($raum['FensterInvert'] ?? false)) {
                 $open = !$open;
             }
-            $cls  = $open ? 'red' : 'green';
-            $text = $open ? 'offen' : 'gesch';
-            $fensterCell = "<span class='c-cell'><span class='ico'>🪟</span><span class='v {$cls}'>{$text}</span></span>";
+            $cls        = $open ? " class='al-r'" : '';
+            $text       = $open ? 'offen' : 'zu';
+            $fensterHTML = "<span class='p-ico'>🪟</span><span{$cls}>{$text}</span>";
         }
 
-        // Luftfeuchtigkeit
-        $humCell = '';
-        $humID   = (int)($raum['HumID'] ?? 0);
-        if ($humID > 0 && IPS_VariableExists($humID)) {
-            $val = (int)round((float)GetValue($humID));
-            if ($val >= 40 && $val <= 60) {
-                $cls = 'green';
-            } elseif ($val < 30 || $val > 70) {
-                $cls = 'red';
-            } else {
-                $cls = 'yellow';
-            }
-            $humCell = "<span class='c-cell'><span class='ico'>💧</span><span class='v {$cls}'>{$val}%</span></span>";
+        // ── Luftfeuchtigkeit ──────────────────────────────────────────
+        $humID  = (int)($raum['HumID'] ?? 0);
+        $hasHum = $humID > 0 && IPS_VariableExists($humID);
+        $humHTML = '';
+        if ($hasHum) {
+            $val     = (int)round((float)GetValue($humID));
+            $cls     = ($val < 30 || $val > 60) ? " class='al-r'" : '';
+            $humHTML = "<span class='p-ico'>💧</span><span{$cls}>{$val}%</span>";
         }
 
-        // CO₂
-        $co2Cell = '';
-        $co2ID   = (int)($raum['CO2ID'] ?? 0);
-        if ($co2ID > 0 && IPS_VariableExists($co2ID)) {
+        // ── CO₂ ───────────────────────────────────────────────────────
+        $co2ID  = (int)($raum['CO2ID'] ?? 0);
+        $hasCO2 = $co2ID > 0 && IPS_VariableExists($co2ID);
+        $co2HTML = '';
+        if ($hasCO2) {
             $val = (int)GetValue($co2ID);
-            if ($val <= 800) {
-                $cls = 'green';
-            } elseif ($val <= 1200) {
-                $cls = 'yellow';
-            } else {
-                $cls = 'red';
-            }
-            $co2Cell = "<span class='c-cell'><span class='ico'>💨</span><span class='v {$cls}'>{$val}</span></span>";
+            if ($val > 1400)      { $cls = " class='al-r'"; }
+            elseif ($val >= 1000) { $cls = " class='al-y'"; }
+            else                  { $cls = ''; }
+            $co2HTML = "<span class='p-ico'>💨</span><span{$cls}>{$val}</span>";
         }
 
-        // Kopfzeile: Name + Temp
+        // ── Zeilen mit festen Slots ───────────────────────────────────
+        // Zeile 1: Licht | Fenster  (Slot bleibt leer wenn nicht konfiguriert)
+        $row1 = '';
+        if ($hasLicht || $hasFenster) {
+            $l    = "<span class='p-cell'>{$lichtHTML}</span>";
+            $f    = "<span class='p-cell'>{$fensterHTML}</span>";
+            $row1 = "<div class='p-row'>{$l}{$f}</div>";
+        }
+
+        // Zeile 2: Feuchte | CO2
+        $row2 = '';
+        if ($hasHum || $hasCO2) {
+            $h    = "<span class='p-cell'>{$humHTML}</span>";
+            $c    = "<span class='p-cell'>{$co2HTML}</span>";
+            $row2 = "<div class='p-row'>{$h}{$c}</div>";
+        }
+
+        // ── Karte zusammenbauen ───────────────────────────────────────
         $head = "<div class='c-head'><span class='c-name'>{$name}</span>"
-            . ($tempStr !== '' ? "<span class='c-temp {$tempCls}'>{$tempStr}</span>" : '')
+            . ($tempStr !== '' ? "<span class='c-temp{$tempCls}'>{$tempStr}</span>" : '')
             . "</div>";
 
-        // Status-Zeile: Licht + Fenster
-        $row1 = '';
-        if ($lichtCell !== '' || $fensterCell !== '') {
-            $row1 = "<div class='c-row'>{$lichtCell}{$fensterCell}</div>";
-        }
+        $body = ($row1 === '' && $row2 === '' && $tempStr === '')
+            ? "<div class='p-none'>–</div>"
+            : $row1 . $row2;
 
-        // Sensor-Zeile: Feuchte + CO2
-        $row2 = '';
-        if ($humCell !== '' || $co2Cell !== '') {
-            $row2 = "<div class='c-row'>{$humCell}{$co2Cell}</div>";
-        }
+        $linkID   = (int)($raum['LinkID'] ?? 0);
+        $cardAttr = $linkID > 0
+            ? "class='card clickable' onclick='openObject({$linkID})'"
+            : "class='card'";
 
-        $rows = "<div class='c-rows'>{$row1}{$row2}</div>";
-
-        if ($row1 === '' && $row2 === '' && $tempStr === '') {
-            $rows = "<div style='color:var(--empty);font-size:0.82em;'>–</div>";
-        }
-
-        $linkID = (int)($raum['LinkID'] ?? 0);
-        if ($linkID > 0) {
-            $cardAttr = "class='card clickable' onclick='openObject({$linkID})'";
-        } else {
-            $cardAttr = "class='card'";
-        }
-
-        return "<div {$cardAttr}>{$head}{$rows}</div>";
+        return "<div {$cardAttr}>{$head}{$body}</div>";
     }
 }
