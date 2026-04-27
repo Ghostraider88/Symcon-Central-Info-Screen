@@ -184,14 +184,25 @@ class HomeScreen extends IPSModuleStrict
   .al-y{color:#e65c00;}
   .co2dot{display:inline-block;width:7px;height:7px;border-radius:50%;vertical-align:middle;margin-left:2px;flex-shrink:0;}
   .dot-g{background:#4caf50;}.dot-y{background:#e65c00;}.dot-r{background:#e53935;}
-  .out-bar{display:flex;align-items:center;gap:14px;padding:8px 12px;background:rgba(91,155,213,0.09);border-radius:6px;margin-bottom:10px;border-left:3px solid #5b9bd5;}
-  .out-label{font-size:0.72em;font-weight:700;color:#5b9bd5;text-transform:uppercase;letter-spacing:0.06em;flex-shrink:0;}
-  .out-temp{font-size:1.5em;font-weight:700;color:var(--title);flex-shrink:0;}
-  .out-cold{color:#5b9bd5;}.out-cool{color:#82b4d4;}.out-warm{color:#e65c00;}.out-hot{color:#e53935;}
-  .out-details{display:flex;gap:10px;align-items:center;flex:1;flex-wrap:wrap;}
-  .out-range{display:flex;gap:6px;align-items:center;font-size:0.85em;}
+  .out-bar{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:7px;margin-bottom:10px;border:1px solid transparent;}
+  .out-theme-freeze{background:linear-gradient(135deg,rgba(91,155,213,0.18),rgba(91,155,213,0.06));border-color:rgba(91,155,213,0.3);border-left:3px solid #5b9bd5;}
+  .out-theme-cold{background:linear-gradient(135deg,rgba(130,190,220,0.15),rgba(130,190,220,0.05));border-color:rgba(130,190,220,0.25);border-left:3px solid #82bed4;}
+  .out-theme-cool{background:linear-gradient(135deg,rgba(100,180,100,0.12),rgba(100,180,100,0.04));border-color:rgba(100,180,100,0.22);border-left:3px solid #64b464;}
+  .out-theme-mild{background:linear-gradient(135deg,rgba(76,175,80,0.11),rgba(76,175,80,0.03));border-color:rgba(76,175,80,0.20);border-left:3px solid #4caf50;}
+  .out-theme-warm{background:linear-gradient(135deg,rgba(255,167,38,0.14),rgba(255,167,38,0.04));border-color:rgba(255,167,38,0.25);border-left:3px solid #ffa726;}
+  .out-theme-hot{background:linear-gradient(135deg,rgba(229,57,53,0.14),rgba(229,57,53,0.04));border-color:rgba(229,57,53,0.25);border-left:3px solid #e53935;}
+  .out-icon{font-size:2.0em;flex-shrink:0;line-height:1;}
+  .out-body{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;}
+  .out-row1{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+  .out-row2{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:1px;}
+  .out-label{font-size:0.70em;font-weight:700;color:var(--group-clr);text-transform:uppercase;letter-spacing:0.07em;}
+  .out-temp{font-size:1.6em;font-weight:700;color:var(--title);line-height:1;}
+  .out-cold{color:#5b9bd5;}.out-cool{color:#4a90b8;}.out-warm{color:#e65c00;}.out-hot{color:#e53935;}
+  .out-comfort{font-size:0.82em;color:var(--text-muted);}
+  .out-range{display:flex;gap:5px;align-items:center;font-size:0.82em;}
   .out-lo{color:#5b9bd5;font-weight:600;}.out-hi{color:#e53935;font-weight:600;}
-  .out-hum{font-size:0.85em;color:var(--text-muted);}
+  .out-hum{font-size:0.82em;color:var(--text-muted);}
+  .out-dew{font-size:0.78em;color:var(--text-muted);}
   .stat-bar{display:flex;gap:10px;align-items:center;padding:4px 2px;margin-bottom:6px;font-size:0.83em;flex-wrap:wrap;}
   .stat-ok{color:#4caf50;font-weight:600;}
   .stat-al{display:flex;align-items:center;gap:3px;}
@@ -513,33 +524,82 @@ HTML;
 
         $temp    = round((float)GetValue($tempID), 1);
         $tempStr = str_replace('.', ',', (string)$temp) . '°';
+        $hum     = null;
 
-        if ($temp <= 0)       { $tempCls = ' out-cold'; }
-        elseif ($temp <= 10)  { $tempCls = ' out-cool'; }
-        elseif ($temp >= 28)  { $tempCls = ' out-hot'; }
-        elseif ($temp >= 22)  { $tempCls = ' out-warm'; }
-        else                  { $tempCls = ''; }
+        if ($humID > 0 && IPS_VariableExists($humID)) {
+            $hum = (int)round((float)GetValue($humID));
+        }
 
-        $details = '';
+        // Temperatur-Klasse + Wetter-Icon + Balken-Theme
+        if ($temp <= 0)      { $tempCls = 'out-cold'; $icon = '❄️';  $barTheme = 'out-theme-freeze'; }
+        elseif ($temp <= 5)  { $tempCls = 'out-cold'; $icon = '🌨️'; $barTheme = 'out-theme-cold'; }
+        elseif ($temp <= 10) { $tempCls = 'out-cool'; $icon = '🌥️'; $barTheme = 'out-theme-cool'; }
+        elseif ($temp <= 15) { $tempCls = 'out-cool'; $icon = '⛅';  $barTheme = 'out-theme-cool'; }
+        elseif ($temp <= 22) { $tempCls = '';          $icon = '🌤️'; $barTheme = 'out-theme-mild'; }
+        elseif ($temp <= 28) { $tempCls = 'out-warm'; $icon = '☀️';  $barTheme = 'out-theme-warm'; }
+        else                 { $tempCls = 'out-hot';  $icon = '🌡️'; $barTheme = 'out-theme-hot'; }
 
+        // Komfort-Einschätzung aus Temperatur + Luftfeuchte
+        $comfort = $this->OutdoorComfortLabel($temp, $hum);
+
+        // Taupunkt (gibt Gefühl für „schwüle Luft")
+        $dewPoint = '';
+        if ($hum !== null && $temp > 10) {
+            $dp  = round($temp - ((100 - $hum) / 5.0), 1);
+            $dewPoint = "Taupunkt " . str_replace('.', ',', (string)$dp) . "°";
+        }
+
+        // Min/Max
+        $minStr = '';
+        $maxStr = '';
         if ($tempMinID > 0 && IPS_VariableExists($tempMinID)) {
-            $min      = round((float)GetValue($tempMinID), 1);
-            $details .= "<span class='out-lo'>↓ " . str_replace('.', ',', (string)$min) . "°</span>";
+            $minStr = str_replace('.', ',', (string)round((float)GetValue($tempMinID), 1)) . '°';
         }
         if ($tempMaxID > 0 && IPS_VariableExists($tempMaxID)) {
-            $max      = round((float)GetValue($tempMaxID), 1);
-            $details .= "<span class='out-hi'>↑ " . str_replace('.', ',', (string)$max) . "°</span>";
-        }
-        if ($humID > 0 && IPS_VariableExists($humID)) {
-            $hum      = (int)round((float)GetValue($humID));
-            $details .= "<span class='out-hum'>💧 {$hum}%</span>";
+            $maxStr = str_replace('.', ',', (string)round((float)GetValue($tempMaxID), 1)) . '°';
         }
 
-        return "<div class='out-bar'>"
-            . "<span class='out-label'>Außen</span>"
-            . "<span class='out-temp{$tempCls}'>{$tempStr}</span>"
-            . ($details !== '' ? "<span class='out-details'>{$details}</span>" : '')
-            . "</div>";
+        $html  = "<div class='out-bar {$barTheme}'>";
+        $html .= "<span class='out-icon'>{$icon}</span>";
+        $html .= "<div class='out-body'>";
+        $html .= "<div class='out-row1'>";
+        $html .= "<span class='out-label'>Außen</span>";
+        $html .= "<span class='out-temp {$tempCls}'>{$tempStr}</span>";
+        $html .= "<span class='out-comfort'>{$comfort}</span>";
+        $html .= "</div>";
+        $html .= "<div class='out-row2'>";
+        if ($minStr !== '' || $maxStr !== '') {
+            $html .= "<span class='out-range'>";
+            if ($minStr !== '') { $html .= "<span class='out-lo'>↓{$minStr}</span>"; }
+            if ($maxStr !== '') { $html .= "<span class='out-hi'>↑{$maxStr}</span>"; }
+            $html .= "</span>";
+        }
+        if ($hum !== null) {
+            $html .= "<span class='out-hum'>💧 {$hum}%</span>";
+        }
+        if ($dewPoint !== '') {
+            $html .= "<span class='out-dew'>{$dewPoint}</span>";
+        }
+        $html .= "</div>";
+        $html .= "</div>";
+        $html .= "</div>";
+
+        return $html;
+    }
+
+    private function OutdoorComfortLabel(float $temp, ?int $hum): string
+    {
+        $isHumid = $hum !== null && $hum > 65;
+        $isDry   = $hum !== null && $hum < 35;
+
+        if ($temp > 30) { return $isHumid ? '🥵 Drückend' : '🔆 Sehr heiß'; }
+        if ($temp > 25) { return $isHumid ? '😓 Schwül'   : '😎 Heiß'; }
+        if ($temp > 20) { return $isDry   ? '😐 Trocken'  : '😊 Warm'; }
+        if ($temp > 15) { return '🙂 Angenehm'; }
+        if ($temp > 10) { return '🧥 Kühl'; }
+        if ($temp > 5)  { return '🥶 Kalt'; }
+        if ($temp > 0)  { return '🥶 Sehr kalt'; }
+        return '❄️ Gefrierend';
     }
 
     private function BuildGlobalStatus(array $raeume): string
