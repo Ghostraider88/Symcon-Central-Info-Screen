@@ -576,31 +576,27 @@ HTML;
             $co2HTML = "<span class='p-ico'>💨</span><span{$cls}>{$val}</span>";
         }
 
-        // ── Zeilen mit festen Slots ───────────────────────────────────
-        // Zeile 1: Licht | Fenster  (Slot bleibt leer wenn nicht konfiguriert)
-        $row1 = '';
-        if ($hasLicht || $hasFenster) {
-            $l    = "<span class='p-cell'>{$lichtHTML}</span>";
-            $f    = "<span class='p-cell'>{$fensterHTML}</span>";
-            $row1 = "<div class='p-row'>{$l}{$f}</div>";
-        }
+        // ── Zeilen immer rendern für feste Positionen ────────────────
+        // Beide Zeilen werden unabhängig vom Inhalt gerendert,
+        // damit Feuchte/CO2 in jeder Karte auf gleicher Höhe steht.
+        $hasAny = $hasLicht || $hasFenster || $hasHum || $hasCO2 || $tempStr !== '';
 
-        // Zeile 2: Feuchte | CO2
-        $row2 = '';
-        if ($hasHum || $hasCO2) {
-            $h    = "<span class='p-cell'>{$humHTML}</span>";
-            $c    = "<span class='p-cell'>{$co2HTML}</span>";
-            $row2 = "<div class='p-row'>{$h}{$c}</div>";
-        }
+        $row1 = "<div class='p-row'>"
+            . "<span class='p-cell'>{$lichtHTML}</span>"
+            . "<span class='p-cell'>{$fensterHTML}</span>"
+            . "</div>";
+
+        $row2 = "<div class='p-row'>"
+            . "<span class='p-cell'>{$humHTML}</span>"
+            . "<span class='p-cell'>{$co2HTML}</span>"
+            . "</div>";
 
         // ── Karte zusammenbauen ───────────────────────────────────────
         $head = "<div class='c-head'><span class='c-name'>{$name}</span>"
             . ($tempStr !== '' ? "<span class='c-temp{$tempCls}'>{$tempStr}</span>" : '')
             . "</div>";
 
-        $body = ($row1 === '' && $row2 === '' && $tempStr === '')
-            ? "<div class='p-none'>–</div>"
-            : $row1 . $row2;
+        $body = $hasAny ? $row1 . $row2 : "<div class='p-none'>–</div>";
 
         $linkID   = (int)($raum['LinkID'] ?? 0);
         $cardAttr = $linkID > 0
