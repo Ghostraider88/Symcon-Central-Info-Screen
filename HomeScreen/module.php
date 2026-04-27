@@ -184,25 +184,27 @@ class HomeScreen extends IPSModuleStrict
   .al-y{color:#e65c00;}
   .co2dot{display:inline-block;width:7px;height:7px;border-radius:50%;vertical-align:middle;margin-left:2px;flex-shrink:0;}
   .dot-g{background:#4caf50;}.dot-y{background:#e65c00;}.dot-r{background:#e53935;}
-  .out-bar{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:7px;margin-bottom:10px;border:1px solid transparent;}
+  .out-bar{display:flex;align-items:center;gap:0;padding:6px 12px;border-radius:6px;margin-bottom:10px;border:1px solid transparent;}
   .out-theme-freeze{background:linear-gradient(135deg,rgba(91,155,213,0.18),rgba(91,155,213,0.06));border-color:rgba(91,155,213,0.3);border-left:3px solid #5b9bd5;}
   .out-theme-cold{background:linear-gradient(135deg,rgba(130,190,220,0.15),rgba(130,190,220,0.05));border-color:rgba(130,190,220,0.25);border-left:3px solid #82bed4;}
   .out-theme-cool{background:linear-gradient(135deg,rgba(100,180,100,0.12),rgba(100,180,100,0.04));border-color:rgba(100,180,100,0.22);border-left:3px solid #64b464;}
   .out-theme-mild{background:linear-gradient(135deg,rgba(76,175,80,0.11),rgba(76,175,80,0.03));border-color:rgba(76,175,80,0.20);border-left:3px solid #4caf50;}
   .out-theme-warm{background:linear-gradient(135deg,rgba(255,167,38,0.14),rgba(255,167,38,0.04));border-color:rgba(255,167,38,0.25);border-left:3px solid #ffa726;}
   .out-theme-hot{background:linear-gradient(135deg,rgba(229,57,53,0.14),rgba(229,57,53,0.04));border-color:rgba(229,57,53,0.25);border-left:3px solid #e53935;}
-  .out-icon{font-size:2.0em;flex-shrink:0;line-height:1;}
-  .out-body{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;}
-  .out-row1{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
-  .out-row2{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:1px;}
+  .out-icon{font-size:1.5em;flex-shrink:0;line-height:1;margin-right:10px;}
+  .out-main{display:flex;align-items:baseline;gap:5px;flex-shrink:0;padding-right:14px;margin-right:14px;border-right:1px solid rgba(0,0,0,0.10);}
+  @media(prefers-color-scheme:dark){.out-main{border-right-color:rgba(255,255,255,0.10);}}
   .out-label{font-size:0.70em;font-weight:700;color:var(--group-clr);text-transform:uppercase;letter-spacing:0.07em;}
-  .out-temp{font-size:1.6em;font-weight:700;color:var(--title);line-height:1;}
+  .out-temp{font-size:1.25em;font-weight:700;color:var(--title);line-height:1;}
   .out-cold{color:#5b9bd5;}.out-cool{color:#4a90b8;}.out-warm{color:#e65c00;}.out-hot{color:#e53935;}
-  .out-comfort{font-size:0.82em;color:var(--text-muted);}
-  .out-range{display:flex;gap:5px;align-items:center;font-size:0.82em;}
+  .out-seg{flex:1;display:flex;align-items:center;justify-content:center;padding:0 6px;font-size:0.82em;color:var(--text-muted);border-right:1px solid rgba(0,0,0,0.07);white-space:nowrap;}
+  .out-seg:last-child{border-right:none;}
+  @media(prefers-color-scheme:dark){.out-seg{border-right-color:rgba(255,255,255,0.07);}}
+  .out-comfort{font-size:1em;}
+  .out-range{display:flex;gap:6px;}
   .out-lo{color:#5b9bd5;font-weight:600;}.out-hi{color:#e53935;font-weight:600;}
-  .out-hum{font-size:0.82em;color:var(--text-muted);}
-  .out-dew{font-size:0.78em;color:var(--text-muted);}
+  .out-hum{color:var(--text-muted);}
+  .out-dew{color:var(--text-muted);font-size:0.95em;}
   .stat-bar{display:flex;gap:10px;align-items:center;padding:4px 2px;margin-bottom:6px;font-size:0.83em;flex-wrap:wrap;}
   .stat-ok{color:#4caf50;font-weight:600;}
   .stat-al{display:flex;align-items:center;gap:3px;}
@@ -559,31 +561,29 @@ HTML;
             $maxStr = str_replace('.', ',', (string)round((float)GetValue($tempMaxID), 1)) . '°';
         }
 
+        // Einzeilig, Werte gleichmäßig in der Breite verteilt
         $html  = "<div class='out-bar {$barTheme}'>";
         $html .= "<span class='out-icon'>{$icon}</span>";
-        $html .= "<div class='out-body'>";
-        $html .= "<div class='out-row1'>";
+        $html .= "<div class='out-main'>";
         $html .= "<span class='out-label'>Außen</span>";
         $html .= "<span class='out-temp {$tempCls}'>{$tempStr}</span>";
-        $html .= "<span class='out-comfort'>{$comfort}</span>";
-        $html .= "</div>";
-        $html .= "<div class='out-row2'>";
-        if ($minStr !== '' || $maxStr !== '') {
-            $html .= "<span class='out-range'>";
-            if ($minStr !== '') { $html .= "<span class='out-lo'>↓{$minStr}</span>"; }
-            if ($maxStr !== '') { $html .= "<span class='out-hi'>↑{$maxStr}</span>"; }
-            $html .= "</span>";
-        }
-        if ($hum !== null) {
-            $html .= "<span class='out-hum'>💧 {$hum}%</span>";
-        }
-        if ($dewPoint !== '') {
-            $html .= "<span class='out-dew'>{$dewPoint}</span>";
-        }
-        $html .= "</div>";
-        $html .= "</div>";
         $html .= "</div>";
 
+        $html .= "<div class='out-seg'><span class='out-comfort'>{$comfort}</span></div>";
+
+        if ($minStr !== '' || $maxStr !== '') {
+            $range  = $minStr !== '' ? "<span class='out-lo'>↓{$minStr}</span>" : '';
+            $range .= $maxStr !== '' ? "<span class='out-hi'>↑{$maxStr}</span>" : '';
+            $html  .= "<div class='out-seg out-range'>{$range}</div>";
+        }
+        if ($hum !== null) {
+            $html .= "<div class='out-seg'><span class='out-hum'>💧 {$hum}%</span></div>";
+        }
+        if ($dewPoint !== '') {
+            $html .= "<div class='out-seg'><span class='out-dew'>{$dewPoint}</span></div>";
+        }
+
+        $html .= "</div>";
         return $html;
     }
 
