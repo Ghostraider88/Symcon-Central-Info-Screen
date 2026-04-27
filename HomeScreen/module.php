@@ -120,41 +120,53 @@ class HomeScreen extends IPSModuleStrict
 
         return <<<HTML
 <style>
-  :root {
-    --bg:transparent;--card-bg:#f0f0f0;--text:#333;--text-muted:#888;
-    --title:#111;--border:rgba(0,0,0,0.10);--divider:rgba(0,0,0,0.08);
-    --group-clr:#555;--group-bg:rgba(0,0,0,0.04);--empty:#999;--footer:#bbb;
+  :root{
+    --bg:transparent;--card-bg:#ffffff;--text:#333;--text-muted:#aaa;
+    --title:#111;--border:rgba(0,0,0,0.15);
+    --group-clr:#555;--group-bg:rgba(0,0,0,0.05);--empty:#999;--footer:#bbb;
   }
   @media(prefers-color-scheme:dark){
     :root{
-      --bg:transparent;--card-bg:#2d2d2d;--text:#e0e0e0;--text-muted:#888;
-      --title:#fff;--border:rgba(255,255,255,0.08);--divider:rgba(255,255,255,0.08);
-      --group-clr:#aaa;--group-bg:rgba(255,255,255,0.04);--empty:#555;--footer:#555;
+      --bg:transparent;--card-bg:#1e1e1e;--text:#ddd;--text-muted:#666;
+      --title:#f0f0f0;--border:rgba(255,255,255,0.15);
+      --group-clr:#aaa;--group-bg:rgba(255,255,255,0.05);--empty:#555;--footer:#555;
     }
   }
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:10px;font-size:12px;}
-  .grp{margin-bottom:8px;}
-  .grp+.grp{margin-top:10px;}
-  .grp-hdr{display:flex;align-items:center;gap:6px;padding:4px 6px;background:var(--group-bg);border-radius:5px;margin-bottom:5px;}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:10px;font-size:13px;}
+  .grp{margin-bottom:10px;}
+  .grp+.grp{margin-top:12px;}
+  .grp-hdr{display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--group-bg);border-radius:5px;margin-bottom:6px;border-left:3px solid #bbb;}
   .grp-hdr.clickable{cursor:pointer;}
   .grp-hdr.clickable:hover{filter:brightness(0.95);}
-  .grp-name{font-size:0.83em;font-weight:700;color:var(--group-clr);text-transform:uppercase;letter-spacing:0.05em;flex:1;}
-  .grp-stats{display:flex;gap:6px;align-items:center;}
-  .grp-stat{font-size:0.80em;color:var(--text-muted);display:flex;align-items:center;gap:2px;white-space:nowrap;}
-  .grid{display:flex;flex-wrap:wrap;gap:6px;}
-  .card{background:var(--card-bg);border-radius:6px;padding:7px 9px;flex:0 1 auto;min-width:110px;max-width:185px;border:1px solid var(--border);}
+  .grp-name{font-size:0.82em;font-weight:700;color:var(--group-clr);text-transform:uppercase;letter-spacing:0.06em;flex:1;}
+  .grp-chips{display:flex;gap:4px;align-items:center;flex-wrap:wrap;}
+  .chip{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:10px;font-size:0.78em;font-weight:600;white-space:nowrap;}
+  .chip-y{background:rgba(255,152,0,0.20);color:#c97000;}
+  .chip-r{background:rgba(244,67,54,0.17);color:#c62828;}
+  .chip-n{background:rgba(0,0,0,0.08);color:var(--text-muted);}
+  @media(prefers-color-scheme:dark){
+    .chip-y{background:rgba(255,152,0,0.20);color:#ffb74d;}
+    .chip-r{background:rgba(244,67,54,0.22);color:#ef9a9a;}
+    .chip-n{background:rgba(255,255,255,0.08);color:var(--text-muted);}
+  }
+  .grid{display:flex;flex-wrap:wrap;gap:8px;}
+  .card{background:var(--card-bg);border-radius:7px;padding:8px 11px;flex:0 1 auto;min-width:130px;max-width:220px;border:1px solid var(--border);border-left:3px solid transparent;box-shadow:0 1px 3px rgba(0,0,0,0.08);}
   .card.clickable{cursor:pointer;}
-  .card.clickable:hover{filter:brightness(0.97);border-color:rgba(100,100,100,0.3);}
-  .c-head{display:flex;justify-content:space-between;align-items:baseline;gap:4px;margin-bottom:3px;}
-  .c-name{font-weight:600;color:var(--title);font-size:1.0em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .c-temp{font-weight:600;font-size:0.95em;white-space:nowrap;flex-shrink:0;}
-  .c-rows{display:flex;flex-direction:column;gap:2px;}
-  .c-row{display:flex;gap:6px;}
-  .c-cell{display:flex;align-items:center;gap:2px;white-space:nowrap;flex:1;}
-  .ico{font-size:0.9em;flex-shrink:0;}
-  .v{font-size:0.88em;}
-  .green{color:#4caf50;}.yellow{color:#ff9800;}.red{color:#f44336;}
+  .card.clickable:hover{opacity:0.88;}
+  .s-alert{border-left-color:#f44336;}
+  .s-warn{border-left-color:#ff9800;}
+  @media(prefers-color-scheme:dark){
+    .card{box-shadow:0 1px 3px rgba(0,0,0,0.3);}
+  }
+  .c-head{display:flex;justify-content:space-between;align-items:baseline;gap:6px;margin-bottom:6px;}
+  .c-name{font-weight:700;color:var(--title);font-size:1.0em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .c-temp{font-weight:700;font-size:0.95em;white-space:nowrap;flex-shrink:0;}
+  .c-chips{display:flex;flex-wrap:wrap;gap:3px;}
+  .c-sensors{display:flex;gap:10px;margin-top:4px;}
+  .c-sensor{display:flex;align-items:center;gap:2px;font-size:0.82em;color:var(--text-muted);}
+  .c-sensor.val-g{color:#4caf50;}.c-sensor.val-y{color:#e65c00;}.c-sensor.val-r{color:#e53935;}
+  .green{color:#4caf50;}.yellow{color:#e65c00;}.red{color:#e53935;}
   .empty{color:var(--empty);padding:10px;font-size:0.9em;}
   .footer{margin-top:8px;font-size:0.67em;color:var(--footer);text-align:right;}
 </style>
@@ -178,6 +190,7 @@ HTML;
     {
         // Bereiche für das Dropdown in der Räume-Liste vorbereiten
         $bereiche = json_decode($this->ReadPropertyString('Bereiche'), true) ?? [];
+        $this->SortByPosition($bereiche);
         $bereichOptionen = [['caption' => '– kein Bereich –', 'value' => '']];
         foreach ($bereiche as $b) {
             $name = trim($b['Name'] ?? '');
