@@ -132,18 +132,13 @@ class HomeScreen extends IPSModuleStrict
         $safeFooter  = htmlspecialchars($footer);
 
         return <<<HTML
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
   :root{
     --bg:transparent;--card-bg:#ffffff;--text:#333;--text-muted:#aaa;
     --title:#111;--border:rgba(0,0,0,0.15);
     --group-clr:#555;--group-bg:rgba(0,0,0,0.05);--empty:#999;--footer:#bbb;
-  }
-  @media(prefers-color-scheme:dark){
-    :root{
-      --bg:transparent;--card-bg:#1e1e1e;--text:#ddd;--text-muted:#666;
-      --title:#f0f0f0;--border:rgba(255,255,255,0.15);
-      --group-clr:#aaa;--group-bg:rgba(255,255,255,0.05);--empty:#555;--footer:#555;
-    }
+    --div-clr:rgba(0,0,0,0.08);
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:10px;font-size:13px;}
@@ -155,24 +150,14 @@ class HomeScreen extends IPSModuleStrict
   .grp-name{font-size:0.80em;font-weight:700;color:var(--group-clr);text-transform:uppercase;letter-spacing:0.05em;flex:1;}
   .grp-chips{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
   .grp-stat{display:inline-flex;align-items:center;gap:2px;font-size:0.80em;}
-  .chip{display:inline-flex;align-items:center;gap:2px;padding:1px 6px;border-radius:8px;font-size:0.75em;font-weight:600;white-space:nowrap;}
   .chip-y{background:rgba(255,152,0,0.20);color:#c97000;}
   .chip-r{background:rgba(244,67,54,0.17);color:#c62828;}
-  .chip-n{background:rgba(0,0,0,0.08);color:var(--text-muted);}
-  @media(prefers-color-scheme:dark){
-    .chip-y{background:rgba(255,152,0,0.20);color:#ffb74d;}
-    .chip-r{background:rgba(244,67,54,0.22);color:#ef9a9a;}
-    .chip-n{background:rgba(255,255,255,0.08);color:var(--text-muted);}
-  }
   .grid{display:flex;flex-wrap:wrap;gap:6px;}
   .card{background:var(--card-bg);border-radius:6px;padding:6px 9px;flex:0 1 auto;min-width:120px;max-width:170px;border:1px solid var(--border);border-left:3px solid transparent;box-shadow:0 1px 2px rgba(0,0,0,0.06);}
   .card.clickable{cursor:pointer;}
   .card.clickable:hover{opacity:0.88;}
   .s-alert{border-left-color:#f44336;}
   .s-warn{border-left-color:#ff9800;}
-  @media(prefers-color-scheme:dark){
-    .card{box-shadow:0 1px 2px rgba(0,0,0,0.25);}
-  }
   .c-head{display:flex;justify-content:space-between;align-items:baseline;gap:4px;margin-bottom:4px;}
   .c-name{font-weight:600;color:var(--title);font-size:0.95em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .c-temp{font-weight:600;font-size:0.90em;white-space:nowrap;flex-shrink:0;}
@@ -184,7 +169,8 @@ class HomeScreen extends IPSModuleStrict
   .al-y{color:#e65c00;}
   .co2dot{display:inline-block;width:7px;height:7px;border-radius:50%;vertical-align:middle;margin-left:2px;flex-shrink:0;}
   .dot-g{background:#4caf50;}.dot-y{background:#e65c00;}.dot-r{background:#e53935;}
-  .out-bar{display:flex;align-items:center;gap:0;padding:6px 12px;border-radius:6px;margin-bottom:10px;border:1px solid transparent;}
+  /* ── Wetter-Bar ──────────────────────────────────────────── */
+  .out-bar{display:flex;align-items:center;flex-wrap:wrap;gap:0;padding:6px 12px;border-radius:6px;margin-bottom:10px;border:1px solid transparent;}
   .out-theme-freeze{background:linear-gradient(135deg,rgba(91,155,213,0.18),rgba(91,155,213,0.06));border-color:rgba(91,155,213,0.3);border-left:3px solid #5b9bd5;}
   .out-theme-cold{background:linear-gradient(135deg,rgba(130,190,220,0.15),rgba(130,190,220,0.05));border-color:rgba(130,190,220,0.25);border-left:3px solid #82bed4;}
   .out-theme-cool{background:linear-gradient(135deg,rgba(100,180,100,0.12),rgba(100,180,100,0.04));border-color:rgba(100,180,100,0.22);border-left:3px solid #64b464;}
@@ -192,19 +178,25 @@ class HomeScreen extends IPSModuleStrict
   .out-theme-warm{background:linear-gradient(135deg,rgba(255,167,38,0.14),rgba(255,167,38,0.04));border-color:rgba(255,167,38,0.25);border-left:3px solid #ffa726;}
   .out-theme-hot{background:linear-gradient(135deg,rgba(229,57,53,0.14),rgba(229,57,53,0.04));border-color:rgba(229,57,53,0.25);border-left:3px solid #e53935;}
   .out-icon{font-size:1.5em;flex-shrink:0;line-height:1;margin-right:10px;}
-  .out-main{display:flex;align-items:baseline;gap:5px;flex-shrink:0;padding-right:14px;margin-right:14px;border-right:1px solid rgba(0,0,0,0.10);}
-  @media(prefers-color-scheme:dark){.out-main{border-right-color:rgba(255,255,255,0.10);}}
+  .out-main{display:flex;align-items:baseline;gap:5px;flex-shrink:0;padding-right:14px;margin-right:14px;border-right:1px solid var(--div-clr);}
   .out-label{font-size:0.70em;font-weight:700;color:var(--group-clr);text-transform:uppercase;letter-spacing:0.07em;}
   .out-temp{font-size:1.25em;font-weight:700;color:var(--title);line-height:1;}
   .out-cold{color:#5b9bd5;}.out-cool{color:#4a90b8;}.out-warm{color:#e65c00;}.out-hot{color:#e53935;}
-  .out-seg{flex:1;display:flex;align-items:center;justify-content:center;padding:0 6px;font-size:0.82em;color:var(--text-muted);border-right:1px solid rgba(0,0,0,0.07);white-space:nowrap;}
+  .out-seg{flex:1;display:flex;align-items:center;justify-content:center;padding:0 6px;font-size:0.82em;color:var(--text-muted);border-right:1px solid var(--div-clr);white-space:nowrap;}
   .out-seg:last-child{border-right:none;}
-  @media(prefers-color-scheme:dark){.out-seg{border-right-color:rgba(255,255,255,0.07);}}
   .out-comfort{font-size:1em;}
   .out-range{display:flex;gap:6px;}
   .out-lo{color:#5b9bd5;font-weight:600;}.out-hi{color:#e53935;font-weight:600;}
-  .out-hum{color:var(--text-muted);}
-  .out-dew{color:var(--text-muted);font-size:0.95em;}
+  /* ── Mobile: Wetter-Bar 2-zeilig ──────────────────────────── */
+  @media(max-width:520px){
+    .out-bar{padding:6px 10px;}
+    .out-icon{font-size:1.25em;margin-right:7px;}
+    .out-main{flex-basis:100%;border-right:none;padding-right:0;margin-right:0;padding-bottom:5px;margin-bottom:4px;border-bottom:1px solid var(--div-clr);}
+    .out-temp{font-size:1.15em;}
+    .out-seg{flex:0 0 auto;border-right:none;padding:2px 8px 0;}
+    .out-seg:not(:last-child){border-right:1px solid var(--div-clr);}
+  }
+  /* ── Status & Footer ─────────────────────────────────────── */
   .stat-bar{display:flex;gap:10px;align-items:center;padding:4px 2px;margin-bottom:6px;font-size:0.83em;flex-wrap:wrap;}
   .stat-ok{color:#4caf50;font-weight:600;}
   .stat-al{display:flex;align-items:center;gap:3px;}
