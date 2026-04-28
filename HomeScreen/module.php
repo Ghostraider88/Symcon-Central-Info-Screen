@@ -530,13 +530,13 @@ HTML;
         }
 
         // Temperatur-Klasse + Wetter-Icon + Balken-Theme
-        if ($temp <= 0)      { $tempCls = 'out-cold'; $icon = "<i class='fa-solid fa-snowflake'></i>";        $barTheme = 'out-theme-freeze'; }
-        elseif ($temp <= 5)  { $tempCls = 'out-cold'; $icon = "<i class='fa-solid fa-cloud-snow'></i>";      $barTheme = 'out-theme-cold'; }
-        elseif ($temp <= 10) { $tempCls = 'out-cool'; $icon = "<i class='fa-solid fa-cloud'></i>";            $barTheme = 'out-theme-cool'; }
-        elseif ($temp <= 15) { $tempCls = 'out-cool'; $icon = "<i class='fa-solid fa-cloud-sun'></i>";       $barTheme = 'out-theme-cool'; }
-        elseif ($temp <= 22) { $tempCls = '';          $icon = "<i class='fa-solid fa-cloud-sun'></i>";       $barTheme = 'out-theme-mild'; }
-        elseif ($temp <= 28) { $tempCls = 'out-warm'; $icon = "<i class='fa-solid fa-sun'></i>";              $barTheme = 'out-theme-warm'; }
-        else                 { $tempCls = 'out-hot';  $icon = "<i class='fa-solid fa-temperature-high'></i>"; $barTheme = 'out-theme-hot'; }
+        if ($temp <= 0)      { $tempCls = 'out-cold'; $icon = '❄️';  $barTheme = 'out-theme-freeze'; }
+        elseif ($temp <= 5)  { $tempCls = 'out-cold'; $icon = '🌨️'; $barTheme = 'out-theme-cold'; }
+        elseif ($temp <= 10) { $tempCls = 'out-cool'; $icon = '🌥️'; $barTheme = 'out-theme-cool'; }
+        elseif ($temp <= 15) { $tempCls = 'out-cool'; $icon = '⛅';  $barTheme = 'out-theme-cool'; }
+        elseif ($temp <= 22) { $tempCls = '';          $icon = '🌤️'; $barTheme = 'out-theme-mild'; }
+        elseif ($temp <= 28) { $tempCls = 'out-warm'; $icon = '☀️';  $barTheme = 'out-theme-warm'; }
+        else                 { $tempCls = 'out-hot';  $icon = '🌡️'; $barTheme = 'out-theme-hot'; }
 
         // Komfort-Einschätzung aus Temperatur + Luftfeuchte
         $comfort = $this->OutdoorComfortLabel($temp, $hum);
@@ -574,7 +574,7 @@ HTML;
             $html  .= "<div class='out-seg out-range'>{$range}</div>";
         }
         if ($hum !== null) {
-            $html .= "<div class='out-seg'><span class='out-hum'><i class='fa-solid fa-droplet'></i> {$hum}%</span></div>";
+            $html .= "<div class='out-seg'><span class='out-hum'>💧 {$hum}%</span></div>";
         }
         if ($dewPoint !== '') {
             $html .= "<div class='out-seg'><span class='out-dew'>{$dewPoint}</span></div>";
