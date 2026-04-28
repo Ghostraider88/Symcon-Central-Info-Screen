@@ -134,32 +134,32 @@ class HomeScreen extends IPSModuleStrict
         return <<<HTML
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-  :root{
-    --bg:transparent;--card-bg:#ffffff;--text:#333;--text-muted:#aaa;
-    --title:#111;--border:rgba(0,0,0,0.15);
-    --group-clr:#555;--group-bg:rgba(0,0,0,0.05);--empty:#999;--footer:#bbb;
-    --div-clr:rgba(0,0,0,0.08);
-  }
+  /* Poppins – Symcon Tile Assets */
+  @font-face{font-family:'Poppins';src:url('/tile/assets/google_fonts/Poppins-Regular.ttf') format('truetype');font-weight:400;font-style:normal;}
+  @font-face{font-family:'Poppins';src:url('/tile/assets/google_fonts/Poppins-Italic.ttf') format('truetype');font-weight:400;font-style:italic;}
+  @font-face{font-family:'Poppins';src:url('/tile/assets/google_fonts/Poppins-Bold.ttf') format('truetype');font-weight:700;font-style:normal;}
+  /* Symcon stellt automatisch bereit: --accent-color, --content-color, --card-color */
+  :root{--text-muted:#999;--group-bg:rgba(0,0,0,0.04);--div-clr:rgba(0,0,0,0.08);--footer:#bbb;}
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:10px;font-size:13px;}
+  body{background:transparent;color:var(--content-color);font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;margin:0;padding:8px;font-size:13px;}
   .grp{margin-bottom:8px;}
   .grp+.grp{margin-top:10px;}
-  .grp-hdr{display:flex;align-items:center;gap:6px;padding:4px 7px;background:var(--group-bg);border-radius:5px;margin-bottom:5px;border-left:3px solid #bbb;}
+  .grp-hdr{display:flex;align-items:center;gap:6px;padding:4px 7px;background:var(--group-bg);border-radius:5px;margin-bottom:5px;border-left:3px solid var(--accent-color);}
   .grp-hdr.clickable{cursor:pointer;}
   .grp-hdr.clickable:hover{filter:brightness(0.95);}
-  .grp-name{font-size:0.80em;font-weight:700;color:var(--group-clr);text-transform:uppercase;letter-spacing:0.05em;flex:1;}
+  .grp-name{font-size:0.80em;font-weight:700;color:var(--content-color);text-transform:uppercase;letter-spacing:0.05em;flex:1;}
   .grp-chips{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
   .grp-stat{display:inline-flex;align-items:center;gap:2px;font-size:0.80em;}
   .chip-y{background:rgba(255,152,0,0.20);color:#c97000;}
   .chip-r{background:rgba(244,67,54,0.17);color:#c62828;}
   .grid{display:flex;flex-wrap:wrap;gap:6px;}
-  .card{background:var(--card-bg);border-radius:6px;padding:6px 9px;flex:0 1 auto;min-width:120px;max-width:170px;border:1px solid var(--border);border-left:3px solid transparent;box-shadow:0 1px 2px rgba(0,0,0,0.06);}
+  .card{background:var(--card-color);border-radius:6px;padding:6px 9px;flex:0 1 auto;min-width:120px;max-width:170px;border:1px solid var(--accent-color);border-left:3px solid transparent;}
   .card.clickable{cursor:pointer;}
   .card.clickable:hover{opacity:0.88;}
   .s-alert{border-left-color:#f44336;}
   .s-warn{border-left-color:#ff9800;}
   .c-head{display:flex;justify-content:space-between;align-items:baseline;gap:4px;margin-bottom:4px;}
-  .c-name{font-weight:600;color:var(--title);font-size:0.95em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .c-name{font-weight:600;color:var(--content-color);font-size:0.95em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .c-temp{font-weight:600;font-size:0.90em;white-space:nowrap;flex-shrink:0;}
   .p-row{display:flex;gap:4px;margin-top:2px;min-height:1.4em;}
   .p-cell{display:flex;align-items:center;gap:2px;font-size:0.85em;flex:1;min-width:0;white-space:nowrap;overflow:hidden;}
@@ -179,8 +179,8 @@ class HomeScreen extends IPSModuleStrict
   .out-theme-hot{background:linear-gradient(135deg,rgba(229,57,53,0.14),rgba(229,57,53,0.04));border-color:rgba(229,57,53,0.25);border-left:3px solid #e53935;}
   .out-icon{font-size:1.5em;flex-shrink:0;line-height:1;margin-right:10px;}
   .out-main{display:flex;align-items:baseline;gap:5px;flex-shrink:0;padding-right:14px;margin-right:14px;border-right:1px solid var(--div-clr);}
-  .out-label{font-size:0.70em;font-weight:700;color:var(--group-clr);text-transform:uppercase;letter-spacing:0.07em;}
-  .out-temp{font-size:1.25em;font-weight:700;color:var(--title);line-height:1;}
+  .out-label{font-size:0.70em;font-weight:700;color:var(--content-color);text-transform:uppercase;letter-spacing:0.07em;}
+  .out-temp{font-size:1.25em;font-weight:700;color:var(--content-color);line-height:1;}
   .out-cold{color:#5b9bd5;}.out-cool{color:#4a90b8;}.out-warm{color:#e65c00;}.out-hot{color:#e53935;}
   .out-seg{flex:1;display:flex;align-items:center;justify-content:center;padding:0 6px;font-size:0.82em;color:var(--text-muted);border-right:1px solid var(--div-clr);white-space:nowrap;}
   .out-seg:last-child{border-right:none;}
@@ -201,7 +201,7 @@ class HomeScreen extends IPSModuleStrict
   .stat-ok{color:#4caf50;font-weight:600;}
   .stat-al{display:flex;align-items:center;gap:3px;}
   .grp-ok{color:#4caf50;font-size:0.80em;font-weight:600;}
-  .empty{color:var(--empty);padding:10px;font-size:0.9em;}
+  .empty{color:var(--text-muted);padding:10px;font-size:0.9em;}
   .footer{margin-top:8px;font-size:0.67em;color:var(--footer);text-align:right;}
 </style>
 <div id="cis-content">{$content}</div>
