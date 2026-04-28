@@ -166,6 +166,10 @@ class HomeScreen extends IPSModuleStrict
   .p-cell{display:flex;align-items:center;gap:2px;font-size:0.85em;flex:1;min-width:0;white-space:nowrap;overflow:hidden;}
   .p-ico{font-size:0.85em;flex-shrink:0;width:1.2em;text-align:center;}
   .p-none{color:var(--text-muted);font-size:0.82em;}
+  .ico-muted{color:var(--text-muted);}
+  .ico-on{color:#f5a623;}
+  .ico-warn{color:#e65c00;}
+  .ico-alert{color:#e53935;}
   .al-r{color:#e53935;}
   .al-y{color:#e65c00;}
   .co2dot{display:inline-block;width:7px;height:7px;border-radius:50%;vertical-align:middle;margin-left:2px;flex-shrink:0;}
@@ -688,13 +692,16 @@ HTML;
                 $val     = GetValue($lichtID);
                 $varType = IPS_GetVariable($lichtID)['VariableType'];
                 if ($varType === 0) {
-                    $cls  = $val ? " class='al-r'" : '';
-                    $text = $val ? 'an' : 'aus';
+                    $on   = (bool)$val;
+                    $cls  = $on ? " class='al-r'" : '';
+                    $text = $on ? 'an' : 'aus';
                 } else {
-                    $cls  = $val > 0 ? " class='al-r'" : '';
-                    $text = $val > 0 ? "{$val} an" : 'aus';
+                    $on   = $val > 0;
+                    $cls  = $on ? " class='al-r'" : '';
+                    $text = $on ? "{$val} an" : 'aus';
                 }
-                $stats .= "<span class='grp-stat'><i class='fa-solid fa-lightbulb'></i><span{$cls}>{$text}</span></span>";
+                $icoL  = $on ? 'ico-on' : 'ico-muted';
+                $stats .= "<span class='grp-stat'><i class='fa-solid fa-lightbulb {$icoL}'></i><span{$cls}>{$text}</span></span>";
             }
 
             // Fenster
@@ -703,13 +710,17 @@ HTML;
                 $val     = GetValue($fensterID);
                 $varType = IPS_GetVariable($fensterID)['VariableType'];
                 if ($varType === 0) {
-                    $cls  = $val ? " class='al-r'" : '';
-                    $text = $val ? 'offen' : 'zu';
+                    $open = (bool)$val;
+                    $cls  = $open ? " class='al-r'" : '';
+                    $text = $open ? 'offen' : 'zu';
                 } else {
-                    $cls  = $val > 0 ? " class='al-r'" : '';
-                    $text = $val > 0 ? "{$val} offen" : 'alle zu';
+                    $open = $val > 0;
+                    $cls  = $open ? " class='al-r'" : '';
+                    $text = $open ? "{$val} offen" : 'alle zu';
                 }
-                $stats .= "<span class='grp-stat'><i class='fa-solid fa-door-open'></i><span{$cls}>{$text}</span></span>";
+                $fenIcoH = $open ? 'fa-door-open' : 'fa-door-closed';
+                $icoF    = $open ? 'ico-alert' : 'ico-muted';
+                $stats  .= "<span class='grp-stat'><i class='fa-solid {$fenIcoH} {$icoF}'></i><span{$cls}>{$text}</span></span>";
             }
 
             // Rolladen
@@ -768,10 +779,11 @@ HTML;
             if ((bool)($raum['LichtInvert'] ?? false)) {
                 $on = !$on;
             }
-            $isLichtAn = $on;
-            $cls       = $on ? " class='al-r'" : '';
-            $text      = $on ? 'an' : 'aus';
-            $lichtHTML = "<span class='p-ico'><i class='fa-solid fa-lightbulb'></i></span><span{$cls}>{$text}</span>";
+            $isLichtAn  = $on;
+            $cls        = $on ? " class='al-r'" : '';
+            $text       = $on ? 'an' : 'aus';
+            $icoLicht   = $on ? 'ico-on' : 'ico-muted';
+            $lichtHTML  = "<span class='p-ico'><i class='fa-solid fa-lightbulb {$icoLicht}'></i></span><span{$cls}>{$text}</span>";
         }
 
         // ── Fenster ───────────────────────────────────────────────────
@@ -788,7 +800,8 @@ HTML;
             $cls          = $open ? " class='al-r'" : '';
             $text         = $open ? 'offen' : 'zu';
             $fenIco       = $open ? 'fa-door-open' : 'fa-door-closed';
-            $fensterHTML  = "<span class='p-ico'><i class='fa-solid {$fenIco}'></i></span><span{$cls}>{$text}</span>";
+            $icoFen       = $open ? 'ico-alert' : 'ico-muted';
+            $fensterHTML  = "<span class='p-ico'><i class='fa-solid {$fenIco} {$icoFen}'></i></span><span{$cls}>{$text}</span>";
         }
 
         // ── Luftfeuchtigkeit ──────────────────────────────────────────
@@ -797,8 +810,10 @@ HTML;
         $humHTML = '';
         if ($hasHum) {
             $val     = (int)round((float)GetValue($humID));
-            $cls     = ($val < 30 || $val > 60) ? " class='al-r'" : '';
-            $humHTML = "<span class='p-ico'><i class='fa-solid fa-droplet'></i></span><span{$cls}>{$val}%</span>";
+            $alarm   = ($val < 30 || $val > 60);
+            $cls     = $alarm ? " class='al-r'" : '';
+            $icoHum  = $alarm ? 'ico-alert' : 'ico-muted';
+            $humHTML = "<span class='p-ico'><i class='fa-solid fa-droplet {$icoHum}'></i></span><span{$cls}>{$val}%</span>";
         }
 
         // ── CO₂ ───────────────────────────────────────────────────────
@@ -807,10 +822,10 @@ HTML;
         $co2HTML = '';
         if ($hasCO2) {
             $val = (int)GetValue($co2ID);
-            if ($val > 1400)      { $valCls = " class='al-r'"; $dotCls = 'dot-r'; }
-            elseif ($val >= 1000) { $valCls = " class='al-y'"; $dotCls = 'dot-y'; }
-            else                  { $valCls = '';               $dotCls = 'dot-g'; }
-            $co2HTML = "<span class='p-ico'><i class='fa-solid fa-wind'></i></span><span{$valCls}>{$val}</span><span class='co2dot {$dotCls}'></span>";
+            if ($val > 1400)      { $valCls = " class='al-r'"; $dotCls = 'dot-r'; $icoCO2 = 'ico-alert'; }
+            elseif ($val >= 1000) { $valCls = " class='al-y'"; $dotCls = 'dot-y'; $icoCO2 = 'ico-warn'; }
+            else                  { $valCls = '';               $dotCls = 'dot-g'; $icoCO2 = 'ico-muted'; }
+            $co2HTML = "<span class='p-ico'><i class='fa-solid fa-wind {$icoCO2}'></i></span><span{$valCls}>{$val}</span><span class='co2dot {$dotCls}'></span>";
         }
 
         // ── Karten-Rand je nach Alarmzustand ─────────────────────────
