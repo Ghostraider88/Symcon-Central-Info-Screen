@@ -141,7 +141,7 @@ class HomeScreen extends IPSModuleStrict
   /* Symcon stellt automatisch bereit: --accent-color, --content-color, --card-color */
   :root{--text-muted:#999;--group-bg:rgba(0,0,0,0.04);--div-clr:rgba(0,0,0,0.08);--footer:#bbb;}
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:transparent;color:var(--content-color);font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;margin:0;padding:25px 8px 8px;font-size:13px;}
+  body{background:transparent;color:var(--content-color);font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;margin:0;padding:35px 8px 8px;font-size:13px;}
   .grp{margin-bottom:8px;}
   .grp+.grp{margin-top:10px;}
   .grp-hdr{display:flex;align-items:center;gap:6px;padding:4px 7px;background:var(--group-bg);border-radius:5px;margin-bottom:5px;border-left:3px solid var(--accent-color);}
