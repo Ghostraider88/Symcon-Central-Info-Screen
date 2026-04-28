@@ -2,7 +2,7 @@
     "id": "{D2E7F94A-3B16-4C8E-A591-7F0D2B3E5A8C}",
     "name": "HomeScreen",
     "type": 3,
-    "vendor": "",
+    "vendor": "Torsten Wolf",
     "aliases": [
         "Home Screen",
         "Raumübersicht"
@@ -11,5 +11,5 @@
     "childRequirements": [],
     "implemented": [],
     "prefix": "HomeScreen",
-    "url": ""
+    "url": "https://github.com/Ghostraider88/Symcon-Central-Info-Screen"
 }
