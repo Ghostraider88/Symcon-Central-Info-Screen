@@ -133,7 +133,6 @@ class HomeScreen extends IPSModuleStrict
 
         return <<<HTML
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="stylesheet" href="/tile/assets/vendor/fontawesome/css/all.min.css">
 <style>
   /* Poppins – Symcon Tile Assets */
   @font-face{font-family:'Poppins';src:url('/tile/assets/google_fonts/Poppins-Regular.ttf') format('truetype');font-weight:400;font-style:normal;}
@@ -526,13 +525,13 @@ HTML;
         }
 
         // Temperatur-Klasse + Wetter-Icon + Balken-Theme
-        if ($temp <= 0)      { $tempCls = 'out-cold'; $icon = "<i class='fa-solid fa-snowflake'></i>";        $barTheme = 'out-theme-freeze'; }
-        elseif ($temp <= 5)  { $tempCls = 'out-cold'; $icon = "<i class='fa-solid fa-cloud-snow'></i>";      $barTheme = 'out-theme-cold'; }
-        elseif ($temp <= 10) { $tempCls = 'out-cool'; $icon = "<i class='fa-solid fa-cloud'></i>";            $barTheme = 'out-theme-cool'; }
-        elseif ($temp <= 15) { $tempCls = 'out-cool'; $icon = "<i class='fa-solid fa-cloud-sun'></i>";       $barTheme = 'out-theme-cool'; }
-        elseif ($temp <= 22) { $tempCls = '';          $icon = "<i class='fa-solid fa-cloud-sun'></i>";       $barTheme = 'out-theme-mild'; }
-        elseif ($temp <= 28) { $tempCls = 'out-warm'; $icon = "<i class='fa-solid fa-sun'></i>";              $barTheme = 'out-theme-warm'; }
-        else                 { $tempCls = 'out-hot';  $icon = "<i class='fa-solid fa-temperature-high'></i>"; $barTheme = 'out-theme-hot'; }
+        if ($temp <= 0)      { $tempCls = 'out-cold'; $icon = "<i class='fal fa-snowflake'></i>";        $barTheme = 'out-theme-freeze'; }
+        elseif ($temp <= 5)  { $tempCls = 'out-cold'; $icon = "<i class='fal fa-cloud-snow'></i>";      $barTheme = 'out-theme-cold'; }
+        elseif ($temp <= 10) { $tempCls = 'out-cool'; $icon = "<i class='fal fa-cloud'></i>";            $barTheme = 'out-theme-cool'; }
+        elseif ($temp <= 15) { $tempCls = 'out-cool'; $icon = "<i class='fal fa-cloud-sun'></i>";       $barTheme = 'out-theme-cool'; }
+        elseif ($temp <= 22) { $tempCls = '';          $icon = "<i class='fal fa-cloud-sun'></i>";       $barTheme = 'out-theme-mild'; }
+        elseif ($temp <= 28) { $tempCls = 'out-warm'; $icon = "<i class='fal fa-sun'></i>";              $barTheme = 'out-theme-warm'; }
+        else                 { $tempCls = 'out-hot';  $icon = "<i class='fal fa-temperature-high'></i>"; $barTheme = 'out-theme-hot'; }
 
         // Komfort-Einschätzung aus Temperatur + Luftfeuchte
         $comfort = $this->OutdoorComfortLabel($temp, $hum);
@@ -570,7 +569,7 @@ HTML;
             $html  .= "<div class='out-seg out-range'>{$range}</div>";
         }
         if ($hum !== null) {
-            $html .= "<div class='out-seg'><span class='out-hum'><i class='fa-solid fa-droplet'></i> {$hum}%</span></div>";
+            $html .= "<div class='out-seg'><span class='out-hum'><i class='fal fa-droplet'></i> {$hum}%</span></div>";
         }
         if ($dewPoint !== '') {
             $html .= "<div class='out-seg'><span class='out-dew'>{$dewPoint}</span></div>";
@@ -633,14 +632,14 @@ HTML;
         }
 
         if ($lichterAn === 0 && $fensterOffen === 0 && $tempWarn === 0 && $luftWarn === 0) {
-            return "<div class='stat-bar'><span class='stat-ok'><i class='fa-solid fa-check'></i> Alles in Ordnung</span></div>";
+            return "<div class='stat-bar'><span class='stat-ok'><i class='fal fa-check'></i> Alles in Ordnung</span></div>";
         }
 
         $items = [];
-        if ($lichterAn > 0)    { $items[] = "<span class='stat-al al-r'><i class='fa-solid fa-lightbulb'></i> {$lichterAn} an</span>"; }
-        if ($fensterOffen > 0) { $items[] = "<span class='stat-al al-r'><i class='fa-solid fa-door-open'></i> {$fensterOffen} offen</span>"; }
-        if ($tempWarn > 0)     { $items[] = "<span class='stat-al al-r'><i class='fa-solid fa-temperature-half'></i> {$tempWarn} Temp.</span>"; }
-        if ($luftWarn > 0)     { $items[] = "<span class='stat-al al-y'><i class='fa-solid fa-wind'></i> {$luftWarn} Luft</span>"; }
+        if ($lichterAn > 0)    { $items[] = "<span class='stat-al al-r'><i class='fal fa-lightbulb'></i> {$lichterAn} an</span>"; }
+        if ($fensterOffen > 0) { $items[] = "<span class='stat-al al-r'><i class='fal fa-door-open'></i> {$fensterOffen} offen</span>"; }
+        if ($tempWarn > 0)     { $items[] = "<span class='stat-al al-r'><i class='fal fa-temperature-half'></i> {$tempWarn} Temp.</span>"; }
+        if ($luftWarn > 0)     { $items[] = "<span class='stat-al al-y'><i class='fal fa-wind'></i> {$luftWarn} Luft</span>"; }
 
         return "<div class='stat-bar'>" . implode('', $items) . "</div>";
     }
@@ -694,7 +693,7 @@ HTML;
                     $cls  = $val > 0 ? " class='al-r'" : '';
                     $text = $val > 0 ? "{$val} an" : 'aus';
                 }
-                $stats .= "<span class='grp-stat'><i class='fa-solid fa-lightbulb'></i><span{$cls}>{$text}</span></span>";
+                $stats .= "<span class='grp-stat'><i class='fal fa-lightbulb'></i><span{$cls}>{$text}</span></span>";
             }
 
             // Fenster
@@ -709,7 +708,7 @@ HTML;
                     $cls  = $val > 0 ? " class='al-r'" : '';
                     $text = $val > 0 ? "{$val} offen" : 'alle zu';
                 }
-                $stats .= "<span class='grp-stat'><i class='fa-solid fa-door-open'></i><span{$cls}>{$text}</span></span>";
+                $stats .= "<span class='grp-stat'><i class='fal fa-door-open'></i><span{$cls}>{$text}</span></span>";
             }
 
             // Rolladen
@@ -725,13 +724,13 @@ HTML;
                     $cls  = $val > 0 ? " class='al-r'" : '';
                     $text = $formatted;
                 }
-                $stats .= "<span class='grp-stat'><i class='fa-solid fa-bars'></i><span{$cls}>{$text}</span></span>";
+                $stats .= "<span class='grp-stat'><i class='fal fa-bars'></i><span{$cls}>{$text}</span></span>";
             }
         }
 
         // „✓ OK" wenn keine Alarme in diesem Bereich und auch keine Def-Stats vorhanden
         if ($stats === '' && !empty($raeume) && !$this->HasBereichAlarm($raeume)) {
-            $stats = "<span class='grp-ok'><i class='fa-solid fa-check'></i> alles ok</span>";
+            $stats = "<span class='grp-ok'><i class='fal fa-check'></i> alles ok</span>";
         }
 
         $linkID      = (int)(($def ?? [])['LinkID'] ?? 0);
@@ -771,7 +770,7 @@ HTML;
             $isLichtAn = $on;
             $cls       = $on ? " class='al-r'" : '';
             $text      = $on ? 'an' : 'aus';
-            $lichtHTML = "<span class='p-ico'><i class='fa-solid fa-lightbulb'></i></span><span{$cls}>{$text}</span>";
+            $lichtHTML = "<span class='p-ico'><i class='fal fa-lightbulb'></i></span><span{$cls}>{$text}</span>";
         }
 
         // ── Fenster ───────────────────────────────────────────────────
@@ -798,7 +797,7 @@ HTML;
         if ($hasHum) {
             $val     = (int)round((float)GetValue($humID));
             $cls     = ($val < 30 || $val > 60) ? " class='al-r'" : '';
-            $humHTML = "<span class='p-ico'><i class='fa-solid fa-droplet'></i></span><span{$cls}>{$val}%</span>";
+            $humHTML = "<span class='p-ico'><i class='fal fa-droplet'></i></span><span{$cls}>{$val}%</span>";
         }
 
         // ── CO₂ ───────────────────────────────────────────────────────
@@ -810,7 +809,7 @@ HTML;
             if ($val > 1400)      { $valCls = " class='al-r'"; $dotCls = 'dot-r'; }
             elseif ($val >= 1000) { $valCls = " class='al-y'"; $dotCls = 'dot-y'; }
             else                  { $valCls = '';               $dotCls = 'dot-g'; }
-            $co2HTML = "<span class='p-ico'><i class='fa-solid fa-wind'></i></span><span{$valCls}>{$val}</span><span class='co2dot {$dotCls}'></span>";
+            $co2HTML = "<span class='p-ico'><i class='fal fa-wind'></i></span><span{$valCls}>{$val}</span><span class='co2dot {$dotCls}'></span>";
         }
 
         // ── Karten-Rand je nach Alarmzustand ─────────────────────────
