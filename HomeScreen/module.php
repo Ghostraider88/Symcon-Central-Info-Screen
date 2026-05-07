@@ -12,13 +12,17 @@ class HomeScreen extends IPSModuleStrict
     {
         parent::Create();
 
-        $this->RegisterPropertyString('Bereiche', '[]');
-        $this->RegisterPropertyString('Raeume', '[]');
+        $this->RegisterPropertyString('Bereiche',       '[]');
+        $this->RegisterPropertyString('Raeume',         '[]');
+        $this->RegisterPropertyString('Fahrzeuge',      '[]');
+        $this->RegisterPropertyString('EnergieKacheln', '[]');
+        $this->RegisterPropertyString('KlimaGeraete',   '[]');
+        $this->RegisterPropertyString('Bewaesserung',   '[]');
 
-        $this->RegisterPropertyInteger('AussenTempID', 0);
+        $this->RegisterPropertyInteger('AussenTempID',    0);
         $this->RegisterPropertyInteger('AussenTempMinID', 0);
         $this->RegisterPropertyInteger('AussenTempMaxID', 0);
-        $this->RegisterPropertyInteger('AussenHumID', 0);
+        $this->RegisterPropertyInteger('AussenHumID',     0);
 
         $this->SetVisualizationType(1);
 
@@ -61,7 +65,8 @@ class HomeScreen extends IPSModuleStrict
             if ($linkID > 0) {
                 $this->RegisterReference($linkID);
             }
-            foreach (['LichtID', 'FensterID', 'TempID', 'HumID', 'CO2ID'] as $key) {
+            foreach (['LichtID', 'FensterID', 'TempID', 'HumID', 'CO2ID',
+                      'Geraet1ID', 'Geraet2ID', 'Geraet3ID', 'Geraet4ID'] as $key) {
                 $id = (int)($raum[$key] ?? 0);
                 if ($id > 0 && IPS_VariableExists($id)) {
                     $varIDs[] = $id;
@@ -75,6 +80,26 @@ class HomeScreen extends IPSModuleStrict
             if ($id > 0 && IPS_VariableExists($id)) {
                 $varIDs[] = $id;
                 $this->RegisterReference($id);
+            }
+        }
+
+        foreach (['Fahrzeuge', 'EnergieKacheln', 'KlimaGeraete', 'Bewaesserung'] as $listKey) {
+            $items = json_decode($this->ReadPropertyString($listKey), true) ?? [];
+            foreach ($items as $item) {
+                $linkID = (int)($item['LinkID'] ?? 0);
+                if ($linkID > 0) {
+                    $this->RegisterReference($linkID);
+                }
+                foreach (['SoCID', 'RangeID', 'ChargingID', 'ChargeMinID', 'StatusID',
+                          'SolarID', 'VerbrauchID', 'NetzID', 'BatterieID',
+                          'TempID', 'SollTempID', 'ModusID', 'VentilID',
+                          'AktivID', 'NextStartID', 'LaufzeitID', 'BodenID'] as $key) {
+                    $id = (int)($item[$key] ?? 0);
+                    if ($id > 0 && IPS_VariableExists($id)) {
+                        $varIDs[] = $id;
+                        $this->RegisterReference($id);
+                    }
+                }
             }
         }
 
@@ -108,7 +133,6 @@ class HomeScreen extends IPSModuleStrict
         $bereiche = json_decode($this->ReadPropertyString('Bereiche'), true) ?? [];
         $raeume   = json_decode($this->ReadPropertyString('Raeume'), true) ?? [];
 
-        // Inhalt direkt vorrendern → kein weißer Flash beim Laden
         $content = $this->BuildContent($bereiche, $raeume);
         $footer  = 'Aktualisiert: ' . date('d.m.Y H:i:s');
 
@@ -159,6 +183,8 @@ class HomeScreen extends IPSModuleStrict
   .card.clickable:hover{opacity:0.88;}
   .s-alert{border-left-color:#f44336;}
   .s-warn{border-left-color:#ff9800;}
+  .s-charging{border-left-color:#2196f3;}
+  .s-active{border-left-color:#4caf50;}
   .c-head{display:flex;justify-content:space-between;align-items:baseline;gap:4px;margin-bottom:4px;}
   .c-name{font-weight:500;color:var(--content-color);font-size:0.95em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .c-temp{font-weight:500;font-size:0.90em;white-space:nowrap;flex-shrink:0;}
@@ -170,10 +196,19 @@ class HomeScreen extends IPSModuleStrict
   .ico-on{color:#f5a623;}
   .ico-warn{color:#e65c00;}
   .ico-alert{color:#e53935;}
+  .ico-charging{color:#2196f3;}
+  .ico-solar{color:#f5a623;}
+  .ico-grid-in{color:#4caf50;}
+  .ico-grid-out{color:#e53935;}
+  .ico-active{color:#4caf50;}
   .al-r{color:#e53935;}
   .al-y{color:#e65c00;}
+  .al-g{color:#4caf50;}
   .co2dot{display:inline-block;width:7px;height:7px;border-radius:50%;vertical-align:middle;margin-left:2px;flex-shrink:0;}
   .dot-g{background:#4caf50;}.dot-y{background:#e65c00;}.dot-r{background:#e53935;}
+  .soc-track{background:rgba(0,0,0,0.10);border-radius:3px;height:4px;margin-top:4px;overflow:hidden;}
+  .soc-fill{height:4px;border-radius:3px;transition:width 0.3s;}
+  .soc-ok{background:#4caf50;}.soc-low{background:#ff9800;}.soc-crit{background:#f44336;}
   /* ── Wetter-Bar ──────────────────────────────────────────── */
   .out-bar{display:flex;align-items:center;flex-wrap:wrap;gap:0;padding:6px 12px;border-radius:6px;margin-bottom:10px;border:1px solid transparent;}
   .out-theme-freeze{background:linear-gradient(135deg,rgba(91,155,213,0.18),rgba(91,155,213,0.06));border-color:rgba(91,155,213,0.3);border-left:3px solid #5b9bd5;}
@@ -227,7 +262,6 @@ HTML;
 
     public function GetConfigurationForm(): string
     {
-        // Bereiche für das Dropdown in der Räume-Liste vorbereiten
         $bereiche = json_decode($this->ReadPropertyString('Bereiche'), true) ?? [];
         $this->SortByPosition($bereiche);
         $bereichOptionen = [['caption' => '– kein Bereich –', 'value' => '']];
@@ -238,179 +272,175 @@ HTML;
             }
         }
 
+        $slotOptionen = [
+            ['caption' => '– leer –',   'value' => ''],
+            ['caption' => 'Temperatur', 'value' => 'temp'],
+            ['caption' => 'Licht',      'value' => 'licht'],
+            ['caption' => 'Fenster',    'value' => 'fenster'],
+            ['caption' => 'Luftfeuchte','value' => 'hum'],
+            ['caption' => 'CO₂',        'value' => 'co2'],
+            ['caption' => 'Gerät 1',    'value' => 'geraet1'],
+            ['caption' => 'Gerät 2',    'value' => 'geraet2'],
+            ['caption' => 'Gerät 3',    'value' => 'geraet3'],
+            ['caption' => 'Gerät 4',    'value' => 'geraet4'],
+        ];
+
         return json_encode([
             'elements' => [
                 [
                     'type'    => 'ExpansionPanel',
                     'caption' => 'Außen / Wetter',
                     'items'   => [
-                        [
-                            'type'    => 'SelectVariable',
-                            'name'    => 'AussenTempID',
-                            'caption' => 'Außentemperatur',
-                        ],
-                        [
-                            'type'    => 'SelectVariable',
-                            'name'    => 'AussenHumID',
-                            'caption' => 'Außenluftfeuchtigkeit (optional)',
-                        ],
-                        [
-                            'type'    => 'SelectVariable',
-                            'name'    => 'AussenTempMinID',
-                            'caption' => 'Tages-Tiefstwert (optional)',
-                        ],
-                        [
-                            'type'    => 'SelectVariable',
-                            'name'    => 'AussenTempMaxID',
-                            'caption' => 'Tages-Höchstwert (optional)',
-                        ],
+                        ['type' => 'SelectVariable', 'name' => 'AussenTempID',    'caption' => 'Außentemperatur'],
+                        ['type' => 'SelectVariable', 'name' => 'AussenHumID',     'caption' => 'Außenluftfeuchtigkeit (optional)'],
+                        ['type' => 'SelectVariable', 'name' => 'AussenTempMinID', 'caption' => 'Tages-Tiefstwert (optional)'],
+                        ['type' => 'SelectVariable', 'name' => 'AussenTempMaxID', 'caption' => 'Tages-Höchstwert (optional)'],
                     ],
                 ],
                 [
                     'type'    => 'ExpansionPanel',
                     'caption' => 'Bereiche / Stockwerke',
                     'items'   => [[
-                        'type'    => 'List',
-                        'name'    => 'Bereiche',
-                        'caption' => 'Bereiche (Reihenfolge über Pos.-Nummer)',
-                        'add'     => true,
-                        'delete'  => true,
+                        'type'     => 'List',
+                        'name'     => 'Bereiche',
+                        'caption'  => 'Bereiche (Reihenfolge über Pos.-Nummer)',
+                        'add'      => true,
+                        'delete'   => true,
                         'rowCount' => 8,
-                        'columns' => [
-                            [
-                                'caption' => 'Pos.',
-                                'name'    => 'Position',
-                                'width'   => '50px',
-                                'add'     => 0,
-                                'edit'    => ['type' => 'NumberSpinner', 'minimum' => 0, 'maximum' => 999],
-                            ],
-                            [
-                                'caption' => 'Name',
-                                'name'    => 'Name',
-                                'width'   => '120px',
-                                'add'     => 'Neues Stockwerk',
-                                'edit'    => ['type' => 'ValidationTextBox'],
-                            ],
-                            [
-                                'caption' => 'Navigation (Klick)',
-                                'name'    => 'LinkID',
-                                'width'   => '150px',
-                                'add'     => 0,
-                                'edit'    => ['type' => 'SelectObject'],
-                            ],
-                            [
-                                'caption' => 'Licht (Anzahl/Bool)',
-                                'name'    => 'LichtID',
-                                'width'   => '140px',
-                                'add'     => 0,
-                                'edit'    => ['type' => 'SelectVariable'],
-                            ],
-                            [
-                                'caption' => 'Fenster (Anzahl/Bool)',
-                                'name'    => 'FensterID',
-                                'width'   => '140px',
-                                'add'     => 0,
-                                'edit'    => ['type' => 'SelectVariable'],
-                            ],
-                            [
-                                'caption' => 'Rolladen (Anzahl/Bool)',
-                                'name'    => 'RolladenID',
-                                'width'   => '140px',
-                                'add'     => 0,
-                                'edit'    => ['type' => 'SelectVariable'],
-                            ],
+                        'columns'  => [
+                            ['caption' => 'Pos.',                'name' => 'Position',  'width' => '50px',  'add' => 0,               'edit' => ['type' => 'NumberSpinner', 'minimum' => 0, 'maximum' => 999]],
+                            ['caption' => 'Name',                'name' => 'Name',      'width' => '120px', 'add' => 'Neues Stockwerk','edit' => ['type' => 'ValidationTextBox']],
+                            ['caption' => 'Navigation (Klick)',  'name' => 'LinkID',    'width' => '150px', 'add' => 0,               'edit' => ['type' => 'SelectObject']],
+                            ['caption' => 'Licht (Anzahl/Bool)', 'name' => 'LichtID',   'width' => '140px', 'add' => 0,               'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Fenster (Anzahl)',    'name' => 'FensterID', 'width' => '140px', 'add' => 0,               'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Rolladen (Anzahl)',   'name' => 'RolladenID','width' => '140px', 'add' => 0,               'edit' => ['type' => 'SelectVariable']],
+                        ],
+                    ]],
+                ],
+                [
+                    'type'     => 'ExpansionPanel',
+                    'caption'  => 'Räume',
+                    'expanded' => true,
+                    'items'    => [[
+                        'type'     => 'List',
+                        'name'     => 'Raeume',
+                        'caption'  => 'Räume (Reihenfolge über Pos.-Nummer)',
+                        'add'      => true,
+                        'delete'   => true,
+                        'rowCount' => 8,
+                        'columns'  => [
+                            ['caption' => 'Pos.',             'name' => 'Position',    'width' => '50px',  'add' => 0,          'edit' => ['type' => 'NumberSpinner', 'minimum' => 0, 'maximum' => 999]],
+                            ['caption' => 'Bereich',          'name' => 'Bereich',     'width' => '110px', 'add' => '',         'edit' => ['type' => 'Select', 'options' => $bereichOptionen]],
+                            ['caption' => 'Raumname',         'name' => 'Name',        'width' => '110px', 'add' => 'Neuer Raum','edit' => ['type' => 'ValidationTextBox']],
+                            ['caption' => 'Navigation',       'name' => 'LinkID',      'width' => '120px', 'add' => 0,          'edit' => ['type' => 'SelectObject']],
+                            ['caption' => 'Licht',            'name' => 'LichtID',     'width' => '110px', 'add' => 0,          'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Inv.',             'name' => 'LichtInvert', 'width' => '40px',  'add' => false,      'edit' => ['type' => 'CheckBox']],
+                            ['caption' => 'Fenster',          'name' => 'FensterID',   'width' => '110px', 'add' => 0,          'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Inv.',             'name' => 'FensterInvert','width'=> '40px',  'add' => false,      'edit' => ['type' => 'CheckBox']],
+                            ['caption' => 'Temperatur (°C)',  'name' => 'TempID',      'width' => '110px', 'add' => 0,          'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Luftfeuchte (%)',  'name' => 'HumID',       'width' => '110px', 'add' => 0,          'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'CO₂ (ppm)',        'name' => 'CO2ID',       'width' => '100px', 'add' => 0,          'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Slot 1',           'name' => 'Slot1',       'width' => '90px',  'add' => 'licht',    'edit' => ['type' => 'Select', 'options' => $slotOptionen]],
+                            ['caption' => 'Slot 2',           'name' => 'Slot2',       'width' => '90px',  'add' => 'fenster',  'edit' => ['type' => 'Select', 'options' => $slotOptionen]],
+                            ['caption' => 'Slot 3',           'name' => 'Slot3',       'width' => '90px',  'add' => 'hum',      'edit' => ['type' => 'Select', 'options' => $slotOptionen]],
+                            ['caption' => 'Slot 4',           'name' => 'Slot4',       'width' => '90px',  'add' => 'co2',      'edit' => ['type' => 'Select', 'options' => $slotOptionen]],
+                            ['caption' => 'Gerät 1',          'name' => 'Geraet1ID',   'width' => '110px', 'add' => 0,          'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Gerät 1 Label',    'name' => 'Geraet1Name', 'width' => '100px', 'add' => '',         'edit' => ['type' => 'ValidationTextBox']],
+                            ['caption' => 'Gerät 2',          'name' => 'Geraet2ID',   'width' => '110px', 'add' => 0,          'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Gerät 2 Label',    'name' => 'Geraet2Name', 'width' => '100px', 'add' => '',         'edit' => ['type' => 'ValidationTextBox']],
+                            ['caption' => 'Gerät 3',          'name' => 'Geraet3ID',   'width' => '110px', 'add' => 0,          'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Gerät 3 Label',    'name' => 'Geraet3Name', 'width' => '100px', 'add' => '',         'edit' => ['type' => 'ValidationTextBox']],
+                            ['caption' => 'Gerät 4',          'name' => 'Geraet4ID',   'width' => '110px', 'add' => 0,          'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Gerät 4 Label',    'name' => 'Geraet4Name', 'width' => '100px', 'add' => '',         'edit' => ['type' => 'ValidationTextBox']],
                         ],
                     ]],
                 ],
                 [
                     'type'    => 'ExpansionPanel',
-                    'caption' => 'Räume',
-                    'expanded' => true,
+                    'caption' => 'Fahrzeuge (E-Auto)',
                     'items'   => [[
-                        'type'    => 'List',
-                        'name'    => 'Raeume',
-                        'caption' => 'Räume (Reihenfolge über Pos.-Nummer)',
-                        'add'     => true,
-                        'delete'  => true,
-                        'rowCount' => 8,
-                        'columns' => [
-                            [
-                                'caption' => 'Pos.',
-                                'name'    => 'Position',
-                                'width'   => '50px',
-                                'add'     => 0,
-                                'edit'    => ['type' => 'NumberSpinner', 'minimum' => 0, 'maximum' => 999],
-                            ],
-                            [
-                                'caption' => 'Stockwerk/Bereich',
-                                'name'    => 'Bereich',
-                                'width'   => '120px',
-                                'add'     => '',
-                                'edit'    => ['type' => 'Select', 'options' => $bereichOptionen],
-                            ],
-                            [
-                                'caption' => 'Raumname',
-                                'name'    => 'Name',
-                                'width'   => '120px',
-                                'add'     => 'Neuer Raum',
-                                'edit'    => ['type' => 'ValidationTextBox'],
-                            ],
-                            [
-                                'caption' => 'Navigation (Klick)',
-                                'name'    => 'LinkID',
-                                'width'   => '140px',
-                                'add'     => 0,
-                                'edit'    => ['type' => 'SelectObject'],
-                            ],
-                            [
-                                'caption' => 'Licht',
-                                'name'    => 'LichtID',
-                                'width'   => '120px',
-                                'add'     => 0,
-                                'edit'    => ['type' => 'SelectVariable'],
-                            ],
-                            [
-                                'caption' => 'Inv.',
-                                'name'    => 'LichtInvert',
-                                'width'   => '40px',
-                                'add'     => false,
-                                'edit'    => ['type' => 'CheckBox'],
-                            ],
-                            [
-                                'caption' => 'Fenster',
-                                'name'    => 'FensterID',
-                                'width'   => '120px',
-                                'add'     => 0,
-                                'edit'    => ['type' => 'SelectVariable'],
-                            ],
-                            [
-                                'caption' => 'Inv.',
-                                'name'    => 'FensterInvert',
-                                'width'   => '40px',
-                                'add'     => false,
-                                'edit'    => ['type' => 'CheckBox'],
-                            ],
-                            [
-                                'caption' => 'Temperatur (°C)',
-                                'name'    => 'TempID',
-                                'width'   => '120px',
-                                'add'     => 0,
-                                'edit'    => ['type' => 'SelectVariable'],
-                            ],
-                            [
-                                'caption' => 'Luftfeuchte (%)',
-                                'name'    => 'HumID',
-                                'width'   => '120px',
-                                'add'     => 0,
-                                'edit'    => ['type' => 'SelectVariable'],
-                            ],
-                            [
-                                'caption' => 'CO₂ (ppm)',
-                                'name'    => 'CO2ID',
-                                'width'   => '110px',
-                                'add'     => 0,
-                                'edit'    => ['type' => 'SelectVariable'],
-                            ],
+                        'type'     => 'List',
+                        'name'     => 'Fahrzeuge',
+                        'caption'  => 'Fahrzeuge',
+                        'add'      => true,
+                        'delete'   => true,
+                        'rowCount' => 6,
+                        'columns'  => [
+                            ['caption' => 'Pos.',           'name' => 'Position',    'width' => '50px',  'add' => 0,           'edit' => ['type' => 'NumberSpinner', 'minimum' => 0, 'maximum' => 999]],
+                            ['caption' => 'Bereich',        'name' => 'Bereich',     'width' => '110px', 'add' => '',          'edit' => ['type' => 'Select', 'options' => $bereichOptionen]],
+                            ['caption' => 'Name',           'name' => 'Name',        'width' => '110px', 'add' => 'Fahrzeug',  'edit' => ['type' => 'ValidationTextBox']],
+                            ['caption' => 'Navigation',     'name' => 'LinkID',      'width' => '120px', 'add' => 0,           'edit' => ['type' => 'SelectObject']],
+                            ['caption' => 'Batteriestand%', 'name' => 'SoCID',       'width' => '120px', 'add' => 0,           'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Reichweite (km)','name' => 'RangeID',     'width' => '120px', 'add' => 0,           'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Status (Text)',  'name' => 'StatusID',    'width' => '120px', 'add' => 0,           'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Lädt (Bool)',    'name' => 'ChargingID',  'width' => '110px', 'add' => 0,           'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Restladezeit min','name'=> 'ChargeMinID', 'width' => '120px', 'add' => 0,           'edit' => ['type' => 'SelectVariable']],
+                        ],
+                    ]],
+                ],
+                [
+                    'type'    => 'ExpansionPanel',
+                    'caption' => 'Energie / Solar',
+                    'items'   => [[
+                        'type'     => 'List',
+                        'name'     => 'EnergieKacheln',
+                        'caption'  => 'Energie-Kacheln',
+                        'add'      => true,
+                        'delete'   => true,
+                        'rowCount' => 6,
+                        'columns'  => [
+                            ['caption' => 'Pos.',            'name' => 'Position',   'width' => '50px',  'add' => 0,       'edit' => ['type' => 'NumberSpinner', 'minimum' => 0, 'maximum' => 999]],
+                            ['caption' => 'Bereich',         'name' => 'Bereich',    'width' => '110px', 'add' => '',      'edit' => ['type' => 'Select', 'options' => $bereichOptionen]],
+                            ['caption' => 'Name',            'name' => 'Name',       'width' => '110px', 'add' => 'Solar', 'edit' => ['type' => 'ValidationTextBox']],
+                            ['caption' => 'Navigation',      'name' => 'LinkID',     'width' => '120px', 'add' => 0,       'edit' => ['type' => 'SelectObject']],
+                            ['caption' => 'Solar (W)',       'name' => 'SolarID',    'width' => '110px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Verbrauch (W)',   'name' => 'VerbrauchID','width' => '110px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Netz (W)',        'name' => 'NetzID',     'width' => '110px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Batterie (%)',    'name' => 'BatterieID', 'width' => '110px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
+                        ],
+                    ]],
+                ],
+                [
+                    'type'    => 'ExpansionPanel',
+                    'caption' => 'Klima / Thermostat',
+                    'items'   => [[
+                        'type'     => 'List',
+                        'name'     => 'KlimaGeraete',
+                        'caption'  => 'Klima-Geräte',
+                        'add'      => true,
+                        'delete'   => true,
+                        'rowCount' => 6,
+                        'columns'  => [
+                            ['caption' => 'Pos.',            'name' => 'Position',  'width' => '50px',  'add' => 0,       'edit' => ['type' => 'NumberSpinner', 'minimum' => 0, 'maximum' => 999]],
+                            ['caption' => 'Bereich',         'name' => 'Bereich',   'width' => '110px', 'add' => '',      'edit' => ['type' => 'Select', 'options' => $bereichOptionen]],
+                            ['caption' => 'Name',            'name' => 'Name',      'width' => '110px', 'add' => 'Klima', 'edit' => ['type' => 'ValidationTextBox']],
+                            ['caption' => 'Navigation',      'name' => 'LinkID',    'width' => '120px', 'add' => 0,       'edit' => ['type' => 'SelectObject']],
+                            ['caption' => 'Ist-Temp (°C)',   'name' => 'TempID',    'width' => '110px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Soll-Temp (°C)',  'name' => 'SollTempID','width' => '110px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Modus (Text)',    'name' => 'ModusID',   'width' => '110px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Ventil/Gebläse%','name' => 'VentilID',  'width' => '110px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
+                        ],
+                    ]],
+                ],
+                [
+                    'type'    => 'ExpansionPanel',
+                    'caption' => 'Bewässerung',
+                    'items'   => [[
+                        'type'     => 'List',
+                        'name'     => 'Bewaesserung',
+                        'caption'  => 'Bewässerungs-Zonen',
+                        'add'      => true,
+                        'delete'   => true,
+                        'rowCount' => 6,
+                        'columns'  => [
+                            ['caption' => 'Pos.',              'name' => 'Position',   'width' => '50px',  'add' => 0,       'edit' => ['type' => 'NumberSpinner', 'minimum' => 0, 'maximum' => 999]],
+                            ['caption' => 'Bereich',           'name' => 'Bereich',    'width' => '110px', 'add' => '',      'edit' => ['type' => 'Select', 'options' => $bereichOptionen]],
+                            ['caption' => 'Name',              'name' => 'Name',       'width' => '110px', 'add' => 'Zone',  'edit' => ['type' => 'ValidationTextBox']],
+                            ['caption' => 'Navigation',        'name' => 'LinkID',     'width' => '120px', 'add' => 0,       'edit' => ['type' => 'SelectObject']],
+                            ['caption' => 'Aktiv (Bool)',      'name' => 'AktivID',    'width' => '110px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Nächster Start',    'name' => 'NextStartID','width' => '120px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Restlaufzeit (min)','name' => 'LaufzeitID', 'width' => '130px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Bodenfeuchte (%)',  'name' => 'BodenID',    'width' => '120px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
                         ],
                     ]],
                 ],
@@ -433,7 +463,6 @@ HTML;
     {
         foreach ($items as $i => &$item) {
             if (!isset($item['Position']) || (int)$item['Position'] === 0) {
-                // Kein Pos.-Wert → Originalreihenfolge beibehalten (Index-basiert)
                 $item['_sortKey'] = 10000 + $i;
             } else {
                 $item['_sortKey'] = (int)$item['Position'];
@@ -445,61 +474,79 @@ HTML;
 
     private function BuildContent(array $bereiche, array $raeume): string
     {
-        if (empty($bereiche) && empty($raeume)) {
-            return '<p class="empty">Keine Räume konfiguriert.</p>';
+        $fahrzeuge      = json_decode($this->ReadPropertyString('Fahrzeuge'),      true) ?? [];
+        $energieKacheln = json_decode($this->ReadPropertyString('EnergieKacheln'), true) ?? [];
+        $klimaGeraete   = json_decode($this->ReadPropertyString('KlimaGeraete'),   true) ?? [];
+        $bewaesserung   = json_decode($this->ReadPropertyString('Bewaesserung'),   true) ?? [];
+
+        foreach ($raeume        as &$r) { $r['__typ'] = 'raum'; }
+        foreach ($fahrzeuge     as &$f) { $f['__typ'] = 'auto'; }
+        foreach ($energieKacheln as &$e) { $e['__typ'] = 'energie'; }
+        foreach ($klimaGeraete  as &$k) { $k['__typ'] = 'klima'; }
+        foreach ($bewaesserung  as &$b) { $b['__typ'] = 'wasser'; }
+        unset($r, $f, $e, $k, $b);
+
+        $alleItems = array_merge($raeume, $fahrzeuge, $energieKacheln, $klimaGeraete, $bewaesserung);
+
+        if (empty($bereiche) && empty($alleItems)) {
+            return '<p class="empty">Keine Kacheln konfiguriert.</p>';
         }
 
-        // Reihenfolge per Positions-Nummer steuern
         $this->SortByPosition($bereiche);
-        $this->SortByPosition($raeume);
+        $this->SortByPosition($alleItems);
 
-        // Räume nach Bereich-Name gruppieren (Reihenfolge des ersten Auftretens)
-        $raumGruppen = [];
-        $raumReihenfolge = [];
-        foreach ($raeume as $raum) {
-            $b = trim($raum['Bereich'] ?? '');
-            if (!isset($raumGruppen[$b])) {
-                $raumReihenfolge[] = $b;
-                $raumGruppen[$b] = [];
+        // Nur Räume für den globalen Status und HasBereichAlarm
+        $nurRaeume = array_filter($alleItems, fn($x) => ($x['__typ'] ?? '') === 'raum');
+
+        // Items nach Bereich gruppieren
+        $itemGruppen    = [];
+        $itemReihenfolge = [];
+        foreach ($alleItems as $item) {
+            $bName = trim($item['Bereich'] ?? '');
+            if (!isset($itemGruppen[$bName])) {
+                $itemReihenfolge[] = $bName;
+                $itemGruppen[$bName] = [];
             }
-            $raumGruppen[$b][] = $raum;
+            $itemGruppen[$bName][] = $item;
         }
 
-        // Bereiche-Index für schnellen Zugriff
+        // Bereiche-Index
         $bereichIndex = [];
         foreach ($bereiche as $b) {
             $bereichIndex[trim($b['Name'] ?? '')] = $b;
         }
 
-        // Reihenfolge: zuerst konfigurierte Bereiche (in ihrer Reihenfolge), dann unkonfigurierte
+        // Ausgabe-Reihenfolge: konfigurierte Bereiche, dann unkonfigurierte
         $ausgabeReihenfolge = [];
         foreach ($bereiche as $b) {
             $ausgabeReihenfolge[] = trim($b['Name'] ?? '');
         }
-        foreach ($raumReihenfolge as $name) {
+        foreach ($itemReihenfolge as $name) {
             if (!in_array($name, $ausgabeReihenfolge, true)) {
                 $ausgabeReihenfolge[] = $name;
             }
         }
 
         $html  = $this->BuildOutdoorBar();
-        $html .= $this->BuildGlobalStatus($raeume);
+        $html .= $this->BuildGlobalStatus(array_values($nurRaeume));
 
         foreach ($ausgabeReihenfolge as $bereichName) {
-            $raeumeListe = $raumGruppen[$bereichName] ?? [];
+            $gruppeItems = $itemGruppen[$bereichName] ?? [];
             $bereichDef  = $bereichIndex[$bereichName] ?? null;
 
-            if (empty($raeumeListe) && $bereichDef === null) {
+            if (empty($gruppeItems) && $bereichDef === null) {
                 continue;
             }
 
-            $html .= "<div class='grp'>";
-            $html .= $this->BuildBereichHeader($bereichName, $bereichDef, $raeumeListe);
+            $raeumeFuerHeader = array_values(array_filter($gruppeItems, fn($x) => ($x['__typ'] ?? '') === 'raum'));
 
-            if (!empty($raeumeListe)) {
+            $html .= "<div class='grp'>";
+            $html .= $this->BuildBereichHeader($bereichName, $bereichDef, $raeumeFuerHeader);
+
+            if (!empty($gruppeItems)) {
                 $html .= "<div class='grid'>";
-                foreach ($raeumeListe as $raum) {
-                    $html .= $this->BuildRoomCard($raum);
+                foreach ($gruppeItems as $item) {
+                    $html .= $this->BuildRoomCard($item);
                 }
                 $html .= "</div>";
             }
@@ -507,7 +554,7 @@ HTML;
             $html .= "</div>";
         }
 
-        return $html ?: '<p class="empty">Keine Räume konfiguriert.</p>';
+        return $html ?: '<p class="empty">Keine Kacheln konfiguriert.</p>';
     }
 
     private function BuildOutdoorBar(): string
@@ -529,7 +576,6 @@ HTML;
             $hum = (int)round((float)GetValue($humID));
         }
 
-        // Temperatur-Klasse + Wetter-Icon + Balken-Theme
         if ($temp <= 0)      { $tempCls = 'out-cold'; $icon = '❄️';  $barTheme = 'out-theme-freeze'; }
         elseif ($temp <= 5)  { $tempCls = 'out-cold'; $icon = '🌨️'; $barTheme = 'out-theme-cold'; }
         elseif ($temp <= 10) { $tempCls = 'out-cool'; $icon = '🌥️'; $barTheme = 'out-theme-cool'; }
@@ -538,17 +584,14 @@ HTML;
         elseif ($temp <= 28) { $tempCls = 'out-warm'; $icon = '☀️';  $barTheme = 'out-theme-warm'; }
         else                 { $tempCls = 'out-hot';  $icon = '🌡️'; $barTheme = 'out-theme-hot'; }
 
-        // Komfort-Einschätzung aus Temperatur + Luftfeuchte
-        $comfort = $this->OutdoorComfortLabel($temp, $hum);
+        $comfort  = $this->OutdoorComfortLabel($temp, $hum);
 
-        // Taupunkt (gibt Gefühl für „schwüle Luft")
         $dewPoint = '';
         if ($hum !== null && $temp > 10) {
-            $dp  = round($temp - ((100 - $hum) / 5.0), 1);
-            $dewPoint = "Taupunkt " . str_replace('.', ',', (string)$dp) . "°";
+            $dp       = round($temp - ((100 - $hum) / 5.0), 1);
+            $dewPoint = 'Taupunkt ' . str_replace('.', ',', (string)$dp) . '°';
         }
 
-        // Min/Max
         $minStr = '';
         $maxStr = '';
         if ($tempMinID > 0 && IPS_VariableExists($tempMinID)) {
@@ -558,14 +601,12 @@ HTML;
             $maxStr = str_replace('.', ',', (string)round((float)GetValue($tempMaxID), 1)) . '°';
         }
 
-        // Einzeilig, Werte gleichmäßig in der Breite verteilt
         $html  = "<div class='out-bar {$barTheme}'>";
         $html .= "<span class='out-icon'>{$icon}</span>";
         $html .= "<div class='out-main'>";
         $html .= "<span class='out-label'>Außen</span>";
         $html .= "<span class='out-temp {$tempCls}'>{$tempStr}</span>";
         $html .= "</div>";
-
         $html .= "<div class='out-seg'><span class='out-comfort'>{$comfort}</span></div>";
 
         if ($minStr !== '' || $maxStr !== '') {
@@ -589,9 +630,9 @@ HTML;
         $isHumid = $hum !== null && $hum > 65;
         $isDry   = $hum !== null && $hum < 35;
 
-        if ($temp > 30) { return $isHumid ? '🥵 Drückend' : '🔆 Sehr heiß'; }
-        if ($temp > 25) { return $isHumid ? '😓 Schwül'   : '😎 Heiß'; }
-        if ($temp > 20) { return $isDry   ? '😐 Trocken'  : '😊 Warm'; }
+        if ($temp > 30) { return $isHumid ? '🥵 Drückend'  : '🔆 Sehr heiß'; }
+        if ($temp > 25) { return $isHumid ? '😓 Schwül'    : '😎 Heiß'; }
+        if ($temp > 20) { return $isDry   ? '😐 Trocken'   : '😊 Warm'; }
         if ($temp > 15) { return '🙂 Angenehm'; }
         if ($temp > 10) { return '🧥 Kühl'; }
         if ($temp > 5)  { return '🥶 Kalt'; }
@@ -686,7 +727,6 @@ HTML;
         $stats = '';
 
         if ($def !== null) {
-            // Licht
             $lichtID = (int)($def['LichtID'] ?? 0);
             if ($lichtID > 0 && IPS_VariableExists($lichtID)) {
                 $val     = GetValue($lichtID);
@@ -700,11 +740,10 @@ HTML;
                     $cls  = $on ? " class='al-r'" : '';
                     $text = $on ? "{$val} an" : 'aus';
                 }
-                $icoL  = $on ? 'ico-on' : 'ico-muted';
+                $icoL   = $on ? 'ico-on' : 'ico-muted';
                 $stats .= "<span class='grp-stat'><i class='fa-solid fa-lightbulb {$icoL}'></i><span{$cls}>{$text}</span></span>";
             }
 
-            // Fenster
             $fensterID = (int)($def['FensterID'] ?? 0);
             if ($fensterID > 0 && IPS_VariableExists($fensterID)) {
                 $val     = GetValue($fensterID);
@@ -723,7 +762,6 @@ HTML;
                 $stats  .= "<span class='grp-stat'><i class='fa-solid {$fenIcoH} {$icoF}'></i><span{$cls}>{$text}</span></span>";
             }
 
-            // Rolladen
             $rolladenID = (int)($def['RolladenID'] ?? 0);
             if ($rolladenID > 0 && IPS_VariableExists($rolladenID)) {
                 $val     = GetValue($rolladenID);
@@ -740,7 +778,6 @@ HTML;
             }
         }
 
-        // „✓ OK" wenn keine Alarme in diesem Bereich und auch keine Def-Stats vorhanden
         if ($stats === '' && !empty($raeume) && !$this->HasBereichAlarm($raeume)) {
             $stats = "<span class='grp-ok'><i class='fa-solid fa-check'></i> alles ok</span>";
         }
@@ -755,11 +792,25 @@ HTML;
             . "</div>";
     }
 
-    private function BuildRoomCard(array $raum): string
+    // Dispatch-Funktion – leitet nach Typ weiter
+    private function BuildRoomCard(array $item): string
+    {
+        return match($item['__typ'] ?? 'raum') {
+            'auto'    => $this->BuildCard_Auto($item),
+            'energie' => $this->BuildCard_Energie($item),
+            'klima'   => $this->BuildCard_Klima($item),
+            'wasser'  => $this->BuildCard_Wasser($item),
+            default   => $this->BuildCard_Raum($item),
+        };
+    }
+
+    // ── Raum-Kachel ──────────────────────────────────────────────────────────
+
+    private function BuildCard_Raum(array $raum): string
     {
         $name = htmlspecialchars($raum['Name'] ?? 'Unbenannt');
 
-        // ── Temperatur ────────────────────────────────────────────────
+        // Temperatur
         $tempStr = '';
         $tempCls = '';
         $tempID  = (int)($raum['TempID'] ?? 0);
@@ -769,33 +820,27 @@ HTML;
             $tempStr = str_replace('.', ',', (string)$val) . '°';
         }
 
-        // ── Licht ─────────────────────────────────────────────────────
-        $lichtID  = (int)($raum['LichtID'] ?? 0);
-        $hasLicht  = $lichtID > 0 && IPS_VariableExists($lichtID);
+        // Licht
+        $lichtID   = (int)($raum['LichtID'] ?? 0);
         $isLichtAn = false;
         $lichtHTML = '';
-        if ($hasLicht) {
+        if ($lichtID > 0 && IPS_VariableExists($lichtID)) {
             $on = (bool)GetValue($lichtID);
-            if ((bool)($raum['LichtInvert'] ?? false)) {
-                $on = !$on;
-            }
-            $isLichtAn  = $on;
-            $cls        = $on ? " class='al-r'" : '';
-            $text       = $on ? 'an' : 'aus';
-            $icoLicht   = $on ? 'ico-on' : 'ico-muted';
-            $lichtHTML  = "<span class='p-ico'><i class='fa-solid fa-lightbulb {$icoLicht}'></i></span><span{$cls}>{$text}</span>";
+            if ((bool)($raum['LichtInvert'] ?? false)) $on = !$on;
+            $isLichtAn = $on;
+            $cls       = $on ? " class='al-r'" : '';
+            $text      = $on ? 'an' : 'aus';
+            $icoLicht  = $on ? 'ico-on' : 'ico-muted';
+            $lichtHTML = "<span class='p-ico'><i class='fa-solid fa-lightbulb {$icoLicht}'></i></span><span{$cls}>{$text}</span>";
         }
 
-        // ── Fenster ───────────────────────────────────────────────────
+        // Fenster
         $fensterID    = (int)($raum['FensterID'] ?? 0);
-        $hasFenster   = $fensterID > 0 && IPS_VariableExists($fensterID);
         $isFensterAuf = false;
         $fensterHTML  = '';
-        if ($hasFenster) {
+        if ($fensterID > 0 && IPS_VariableExists($fensterID)) {
             $open = (bool)GetValue($fensterID);
-            if ((bool)($raum['FensterInvert'] ?? false)) {
-                $open = !$open;
-            }
+            if ((bool)($raum['FensterInvert'] ?? false)) $open = !$open;
             $isFensterAuf = $open;
             $cls          = $open ? " class='al-r'" : '';
             $text         = $open ? 'offen' : 'zu';
@@ -804,11 +849,10 @@ HTML;
             $fensterHTML  = "<span class='p-ico'><i class='fa-solid {$fenIco} {$icoFen}'></i></span><span{$cls}>{$text}</span>";
         }
 
-        // ── Luftfeuchtigkeit ──────────────────────────────────────────
-        $humID  = (int)($raum['HumID'] ?? 0);
-        $hasHum = $humID > 0 && IPS_VariableExists($humID);
+        // Luftfeuchtigkeit
+        $humID   = (int)($raum['HumID'] ?? 0);
         $humHTML = '';
-        if ($hasHum) {
+        if ($humID > 0 && IPS_VariableExists($humID)) {
             $val     = (int)round((float)GetValue($humID));
             $alarm   = ($val < 30 || $val > 60);
             $cls     = $alarm ? " class='al-r'" : '';
@@ -816,11 +860,10 @@ HTML;
             $humHTML = "<span class='p-ico'><i class='fa-solid fa-droplet {$icoHum}'></i></span><span{$cls}>{$val}%</span>";
         }
 
-        // ── CO₂ ───────────────────────────────────────────────────────
-        $co2ID  = (int)($raum['CO2ID'] ?? 0);
-        $hasCO2 = $co2ID > 0 && IPS_VariableExists($co2ID);
+        // CO₂
+        $co2ID   = (int)($raum['CO2ID'] ?? 0);
         $co2HTML = '';
-        if ($hasCO2) {
+        if ($co2ID > 0 && IPS_VariableExists($co2ID)) {
             $val = (int)GetValue($co2ID);
             if ($val > 1400)      { $valCls = " class='al-r'"; $dotCls = 'dot-r'; $icoCO2 = 'ico-alert'; }
             elseif ($val >= 1000) { $valCls = " class='al-y'"; $dotCls = 'dot-y'; $icoCO2 = 'ico-warn'; }
@@ -828,36 +871,290 @@ HTML;
             $co2HTML = "<span class='p-ico'><i class='fa-solid fa-wind {$icoCO2}'></i></span><span{$valCls}>{$val}</span><span class='co2dot {$dotCls}'></span>";
         }
 
-        // ── Karten-Rand je nach Alarmzustand ─────────────────────────
-        if ($isFensterAuf)    { $stateClass = ' s-alert'; }
-        elseif ($isLichtAn)   { $stateClass = ' s-warn'; }
-        else                  { $stateClass = ''; }
+        // Slot-Pool
+        $slotPool = [
+            'licht'   => $lichtHTML,
+            'fenster' => $fensterHTML,
+            'hum'     => $humHTML,
+            'co2'     => $co2HTML,
+            'temp'    => $tempStr !== '' ? "<span class='p-ico'><i class='fa-solid fa-temperature-half ico-muted'></i></span><span class='{$tempCls}'>{$tempStr}</span>" : '',
+            'geraet1' => $this->RenderGeraet(1, $raum),
+            'geraet2' => $this->RenderGeraet(2, $raum),
+            'geraet3' => $this->RenderGeraet(3, $raum),
+            'geraet4' => $this->RenderGeraet(4, $raum),
+        ];
 
-        // ── Zeilen immer rendern für feste Positionen ────────────────
-        $hasAny = $hasLicht || $hasFenster || $hasHum || $hasCO2 || $tempStr !== '';
+        // Slots lesen (Defaults: licht, fenster, hum, co2)
+        $slots = [
+            $raum['Slot1'] ?? 'licht',
+            $raum['Slot2'] ?? 'fenster',
+            $raum['Slot3'] ?? 'hum',
+            $raum['Slot4'] ?? 'co2',
+        ];
 
         $row1 = "<div class='p-row'>"
-            . "<span class='p-cell'>{$lichtHTML}</span>"
-            . "<span class='p-cell'>{$fensterHTML}</span>"
+            . "<span class='p-cell'>" . ($slotPool[$slots[0]] ?? '') . "</span>"
+            . "<span class='p-cell'>" . ($slotPool[$slots[1]] ?? '') . "</span>"
             . "</div>";
-
         $row2 = "<div class='p-row'>"
-            . "<span class='p-cell'>{$humHTML}</span>"
-            . "<span class='p-cell'>{$co2HTML}</span>"
+            . "<span class='p-cell'>" . ($slotPool[$slots[2]] ?? '') . "</span>"
+            . "<span class='p-cell'>" . ($slotPool[$slots[3]] ?? '') . "</span>"
             . "</div>";
 
-        // ── Karte zusammenbauen ───────────────────────────────────────
+        if ($isFensterAuf)  { $stateClass = ' s-alert'; }
+        elseif ($isLichtAn) { $stateClass = ' s-warn'; }
+        else                { $stateClass = ''; }
+
         $head = "<div class='c-head'><span class='c-name'>{$name}</span>"
             . ($tempStr !== '' ? "<span class='c-temp{$tempCls}'>{$tempStr}</span>" : '')
             . "</div>";
-
-        $body = $hasAny ? $row1 . $row2 : "<div class='p-none'>–</div>";
 
         $linkID   = (int)($raum['LinkID'] ?? 0);
         $cardAttr = $linkID > 0
             ? "class='card{$stateClass} clickable' onclick='openObject({$linkID})'"
             : "class='card{$stateClass}'";
 
-        return "<div {$cardAttr}>{$head}{$body}</div>";
+        return "<div {$cardAttr}>{$head}{$row1}{$row2}</div>";
+    }
+
+    private function RenderGeraet(int $nr, array $raum): string
+    {
+        $id    = (int)($raum["Geraet{$nr}ID"] ?? 0);
+        $label = htmlspecialchars($raum["Geraet{$nr}Name"] ?? "Gerät {$nr}");
+        if ($id === 0 || !IPS_VariableExists($id)) {
+            return '';
+        }
+        $on  = (bool)GetValue($id);
+        $cls = $on ? " class='al-r'" : '';
+        $ico = $on ? 'ico-on' : 'ico-muted';
+        return "<span class='p-ico'><i class='fa-solid fa-plug {$ico}'></i></span><span{$cls}>{$label}</span>";
+    }
+
+    // ── E-Auto-Kachel ─────────────────────────────────────────────────────────
+
+    private function BuildCard_Auto(array $item): string
+    {
+        $name = htmlspecialchars($item['Name'] ?? '');
+
+        // SoC
+        $socID  = (int)($item['SoCID'] ?? 0);
+        $soc    = null;
+        $socStr = '';
+        $socCls = '';
+        if ($socID > 0 && IPS_VariableExists($socID)) {
+            $soc    = (int)GetValue($socID);
+            $socCls = $soc < 20 ? ' al-r' : ($soc < 40 ? ' al-y' : '');
+            $socStr = "{$soc}%";
+        }
+
+        // Reichweite
+        $rangeID  = (int)($item['RangeID'] ?? 0);
+        $rangeStr = ($rangeID > 0 && IPS_VariableExists($rangeID))
+            ? (int)GetValue($rangeID) . ' km' : '';
+
+        // Lädt?
+        $chargingID = (int)($item['ChargingID'] ?? 0);
+        $isCharging = $chargingID > 0 && IPS_VariableExists($chargingID)
+            && (bool)GetValue($chargingID);
+
+        // Restladezeit
+        $chargeMin   = '';
+        $chargeMinID = (int)($item['ChargeMinID'] ?? 0);
+        if ($isCharging && $chargeMinID > 0 && IPS_VariableExists($chargeMinID)) {
+            $min       = (int)GetValue($chargeMinID);
+            $chargeMin = ($min >= 60 ? (floor($min / 60) . 'h ') : '') . ($min % 60) . 'min';
+        }
+
+        // Status
+        $statusStr = '';
+        $statusID  = (int)($item['StatusID'] ?? 0);
+        if ($statusID > 0 && IPS_VariableExists($statusID)) {
+            $statusStr = htmlspecialchars(GetValueFormatted($statusID));
+        }
+
+        if ($isCharging)         { $stateClass = ' s-charging'; }
+        elseif (!empty($socCls)) { $stateClass = ' s-warn'; }
+        else                     { $stateClass = ''; }
+
+        $html  = "<div class='card{$stateClass}'>";
+        $html .= "<div class='c-head'>";
+        $html .= "<span class='c-name'>{$name}</span>";
+        if ($socStr) {
+            $html .= "<span class='c-temp{$socCls}'>🔋 {$socStr}</span>";
+        }
+        $html .= "</div>";
+
+        if ($soc !== null) {
+            $fillCls = $soc < 20 ? 'soc-crit' : ($soc < 40 ? 'soc-low' : 'soc-ok');
+            $html   .= "<div class='soc-track'><div class='soc-fill {$fillCls}' style='width:{$soc}%'></div></div>";
+        }
+
+        if ($statusStr) {
+            $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-car ico-muted'></i></span><span>{$statusStr}</span></span></div>";
+        }
+        if ($isCharging) {
+            $chargeTxt = $chargeMin ?: 'Lädt…';
+            $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-bolt ico-charging'></i></span><span>{$chargeTxt}</span></span></div>";
+        }
+        if ($rangeStr) {
+            $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-road ico-muted'></i></span><span>{$rangeStr}</span></span></div>";
+        }
+
+        $linkID = (int)($item['LinkID'] ?? 0);
+        if ($linkID > 0) {
+            $html = "<div class='card{$stateClass} clickable' onclick='openObject({$linkID})'>"
+                . substr($html, strlen("<div class='card{$stateClass}'>"));
+        }
+
+        $html .= "</div>";
+        return $html;
+    }
+
+    // ── Energie/Solar-Kachel ──────────────────────────────────────────────────
+
+    private function BuildCard_Energie(array $item): string
+    {
+        $name = htmlspecialchars($item['Name'] ?? '');
+
+        $solarID     = (int)($item['SolarID']     ?? 0);
+        $verbrauchID = (int)($item['VerbrauchID'] ?? 0);
+        $netzID      = (int)($item['NetzID']      ?? 0);
+        $batterieID  = (int)($item['BatterieID']  ?? 0);
+
+        $solarW  = ($solarID > 0     && IPS_VariableExists($solarID))     ? (int)GetValue($solarID)     : null;
+        $verbW   = ($verbrauchID > 0 && IPS_VariableExists($verbrauchID)) ? (int)GetValue($verbrauchID) : null;
+        $netzW   = ($netzID > 0      && IPS_VariableExists($netzID))      ? (int)GetValue($netzID)      : null;
+        $batPct  = ($batterieID > 0  && IPS_VariableExists($batterieID))  ? (int)GetValue($batterieID)  : null;
+
+        $html  = "<div class='card'>";
+        $html .= "<div class='c-head'><span class='c-name'>{$name}</span>";
+        if ($solarW !== null) {
+            $html .= "<span class='c-temp'><i class='fa-solid fa-sun ico-solar'></i> {$solarW} W</span>";
+        }
+        $html .= "</div>";
+
+        if ($verbW !== null) {
+            $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-house ico-muted'></i></span><span>{$verbW} W</span></span></div>";
+        }
+        if ($netzW !== null) {
+            if ($netzW >= 0) {
+                $netzCls = 'ico-grid-in';
+                $netzTxt = "+{$netzW} W";
+            } else {
+                $netzCls = 'ico-grid-out';
+                $netzTxt = "{$netzW} W";
+            }
+            $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-plug-circle-bolt {$netzCls}'></i></span><span>{$netzTxt}</span></span></div>";
+        }
+        if ($batPct !== null) {
+            $fillCls = $batPct < 20 ? 'soc-crit' : ($batPct < 40 ? 'soc-low' : 'soc-ok');
+            $html   .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-battery-half ico-muted'></i></span><span>{$batPct}%</span></span></div>";
+            $html   .= "<div class='soc-track'><div class='soc-fill {$fillCls}' style='width:{$batPct}%'></div></div>";
+        }
+
+        $linkID = (int)($item['LinkID'] ?? 0);
+        if ($linkID > 0) {
+            $html = str_replace("<div class='card'>", "<div class='card clickable' onclick='openObject({$linkID})'>", $html);
+        }
+
+        $html .= "</div>";
+        return $html;
+    }
+
+    // ── Klima/Thermostat-Kachel ───────────────────────────────────────────────
+
+    private function BuildCard_Klima(array $item): string
+    {
+        $name = htmlspecialchars($item['Name'] ?? '');
+
+        $tempID     = (int)($item['TempID']     ?? 0);
+        $sollTempID = (int)($item['SollTempID'] ?? 0);
+        $modusID    = (int)($item['ModusID']    ?? 0);
+        $ventilID   = (int)($item['VentilID']   ?? 0);
+
+        $istTemp  = ($tempID > 0     && IPS_VariableExists($tempID))     ? round((float)GetValue($tempID), 1)     : null;
+        $sollTemp = ($sollTempID > 0 && IPS_VariableExists($sollTempID)) ? round((float)GetValue($sollTempID), 1) : null;
+        $modus    = ($modusID > 0    && IPS_VariableExists($modusID))    ? htmlspecialchars(GetValueFormatted($modusID)) : null;
+        $ventil   = ($ventilID > 0   && IPS_VariableExists($ventilID))   ? (int)GetValue($ventilID)               : null;
+
+        $istStr  = $istTemp  !== null ? str_replace('.', ',', (string)$istTemp)  . '°' : '';
+        $sollStr = $sollTemp !== null ? str_replace('.', ',', (string)$sollTemp) . '°' : '';
+
+        $stateClass = '';
+        if ($istTemp !== null && $sollTemp !== null) {
+            if ($istTemp < $sollTemp - 1) { $stateClass = ' s-warn'; }
+        }
+
+        $html  = "<div class='card{$stateClass}'>";
+        $html .= "<div class='c-head'><span class='c-name'>{$name}</span>";
+        if ($istStr) {
+            $html .= "<span class='c-temp'><i class='fa-solid fa-temperature-half ico-muted'></i> {$istStr}</span>";
+        }
+        $html .= "</div>";
+
+        if ($sollStr) {
+            $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-sliders ico-muted'></i></span><span>Soll: {$sollStr}</span></span></div>";
+        }
+        if ($modus) {
+            $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-circle-half-stroke ico-muted'></i></span><span>{$modus}</span></span></div>";
+        }
+        if ($ventil !== null) {
+            $ventilCls = $ventil > 60 ? 'ico-warn' : 'ico-muted';
+            $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-fan {$ventilCls}'></i></span><span>{$ventil}%</span></span></div>";
+        }
+
+        $linkID = (int)($item['LinkID'] ?? 0);
+        if ($linkID > 0) {
+            $html = str_replace("<div class='card{$stateClass}'>", "<div class='card{$stateClass} clickable' onclick='openObject({$linkID})'>", $html);
+        }
+
+        $html .= "</div>";
+        return $html;
+    }
+
+    // ── Bewässerungs-Kachel ───────────────────────────────────────────────────
+
+    private function BuildCard_Wasser(array $item): string
+    {
+        $name = htmlspecialchars($item['Name'] ?? '');
+
+        $aktivID     = (int)($item['AktivID']     ?? 0);
+        $nextStartID = (int)($item['NextStartID'] ?? 0);
+        $laufzeitID  = (int)($item['LaufzeitID']  ?? 0);
+        $bodenID     = (int)($item['BodenID']     ?? 0);
+
+        $isAktiv  = ($aktivID > 0     && IPS_VariableExists($aktivID))     && (bool)GetValue($aktivID);
+        $nextStr  = ($nextStartID > 0 && IPS_VariableExists($nextStartID)) ? htmlspecialchars(GetValueFormatted($nextStartID)) : null;
+        $laufzeit = ($laufzeitID > 0  && IPS_VariableExists($laufzeitID))  ? (int)GetValue($laufzeitID) : null;
+        $boden    = ($bodenID > 0     && IPS_VariableExists($bodenID))     ? (int)GetValue($bodenID)    : null;
+
+        $stateClass = $isAktiv ? ' s-active' : '';
+
+        $html  = "<div class='card{$stateClass}'>";
+        $html .= "<div class='c-head'><span class='c-name'>{$name}</span>";
+        if ($isAktiv) {
+            $html .= "<span class='c-temp al-g'><i class='fa-solid fa-droplet'></i> aktiv</span>";
+        }
+        $html .= "</div>";
+
+        if ($isAktiv && $laufzeit !== null && $laufzeit > 0) {
+            $restStr = ($laufzeit >= 60 ? (floor($laufzeit / 60) . 'h ') : '') . ($laufzeit % 60) . 'min';
+            $html   .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-clock ico-active'></i></span><span>noch {$restStr}</span></span></div>";
+        }
+        if ($nextStr) {
+            $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-calendar ico-muted'></i></span><span>{$nextStr}</span></span></div>";
+        }
+        if ($boden !== null) {
+            $bodenCls = $boden < 30 ? 'ico-warn' : 'ico-muted';
+            $html    .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-seedling {$bodenCls}'></i></span><span>Boden: {$boden}%</span></span></div>";
+        }
+
+        $linkID = (int)($item['LinkID'] ?? 0);
+        if ($linkID > 0) {
+            $html = str_replace("<div class='card{$stateClass}'>", "<div class='card{$stateClass} clickable' onclick='openObject({$linkID})'>", $html);
+        }
+
+        $html .= "</div>";
+        return $html;
     }
 }
