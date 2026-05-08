@@ -937,16 +937,21 @@ HTML;
         }
 
         $now    = time();
-        $past   = $now - (45 * 60); // 45-Minuten-Fenster
-        $values = AC_GetLoggedValues($archiveID, $varID, $past, $now, 0);
+        $values = AC_GetLoggedValues($archiveID, $varID, $now - 45 * 60, $now, 0);
 
+        // Sensor loggt nur bei Änderung → 45-Min-Fenster leer → 4-Std.-Fenster probieren
         if (count($values) < 2) {
-            return '';
+            $values = AC_GetLoggedValues($archiveID, $varID, $now - 4 * 3600, $now, 0);
         }
 
-        // AC_GetLoggedValues liefert älteste zuerst
-        $oldest = (float)$values[0]['Value'];
-        $newest = (float)$values[count($values) - 1]['Value'];
+        // Immer noch < 2 Werte → Temperatur ist konstant stabil
+        if (count($values) < 2) {
+            return " <i class='fa-solid fa-arrow-right trend-st'></i>";
+        }
+
+        // AC_GetLoggedValues liefert newest-first: Index 0 = neuster, letzter = ältester
+        $newest = (float)$values[0]['Value'];
+        $oldest = (float)$values[count($values) - 1]['Value'];
         $delta  = $newest - $oldest;
 
         if ($delta >= 0.4) {
