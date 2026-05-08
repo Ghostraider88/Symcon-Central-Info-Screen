@@ -587,7 +587,8 @@ HTML;
         elseif ($temp <= 28) { $tempCls = 'out-warm'; $icon = '☀️';  $barTheme = 'out-theme-warm'; }
         else                 { $tempCls = 'out-hot';  $icon = '🌡️'; $barTheme = 'out-theme-hot'; }
 
-        $comfort  = $this->OutdoorComfortLabel($temp, $hum);
+        $trendIcon = $this->GetTempTrend($tempID);
+        $comfort   = $this->OutdoorComfortLabel($temp, $hum);
 
         $dewPoint = '';
         if ($hum !== null && $temp > 10) {
@@ -608,7 +609,7 @@ HTML;
         $html .= "<span class='out-icon'>{$icon}</span>";
         $html .= "<div class='out-main'>";
         $html .= "<span class='out-label'>Außen</span>";
-        $html .= "<span class='out-temp {$tempCls}'>{$tempStr}</span>";
+        $html .= "<span class='out-temp {$tempCls}'>{$tempStr}{$trendIcon}</span>";
         $html .= "</div>";
         $html .= "<div class='out-seg'><span class='out-comfort'>{$comfort}</span></div>";
 
