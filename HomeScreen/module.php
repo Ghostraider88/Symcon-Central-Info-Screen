@@ -955,7 +955,7 @@ HTML;
         if ($delta <= -0.4) {
             return " <i class='fa-solid fa-arrow-trend-down trend-dn'></i>";
         }
-        return " <i class='fa-solid fa-minus trend-st'></i>";
+        return " <i class='fa-solid fa-arrow-right trend-st'></i>";
     }
 
     private function RenderGeraet(int $nr, array $raum): string
