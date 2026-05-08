@@ -1079,10 +1079,10 @@ HTML;
         }
         if ($netzW !== null) {
             if ($netzW >= 0) {
-                $netzCls = 'ico-grid-in';
+                $netzCls = 'ico-grid-out'; // Bezug = rot
                 $netzTxt = "+{$netzW} W";
             } else {
-                $netzCls = 'ico-grid-out';
+                $netzCls = 'ico-grid-in';  // Einspeisung = grün
                 $netzTxt = "{$netzW} W";
             }
             $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-plug-circle-bolt {$netzCls}'></i></span><span>{$netzTxt}</span></span></div>";
