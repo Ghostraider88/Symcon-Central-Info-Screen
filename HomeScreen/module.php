@@ -209,6 +209,9 @@ class HomeScreen extends IPSModuleStrict
   .soc-track{background:rgba(0,0,0,0.10);border-radius:3px;height:4px;margin-top:4px;overflow:hidden;}
   .soc-fill{height:4px;border-radius:3px;transition:width 0.3s;}
   .soc-ok{background:#4caf50;}.soc-low{background:#ff9800;}.soc-crit{background:#f44336;}
+  .trend-up{color:#e65c00;font-size:0.72em;vertical-align:middle;}
+  .trend-dn{color:#5b9bd5;font-size:0.72em;vertical-align:middle;}
+  .trend-st{color:var(--text-muted);font-size:0.72em;vertical-align:middle;}
   /* ── Wetter-Bar ──────────────────────────────────────────── */
   .out-bar{display:flex;align-items:center;flex-wrap:wrap;gap:0;padding:6px 12px;border-radius:6px;margin-bottom:10px;border:1px solid transparent;}
   .out-theme-freeze{background:linear-gradient(135deg,rgba(91,155,213,0.18),rgba(91,155,213,0.06));border-color:rgba(91,155,213,0.3);border-left:3px solid #5b9bd5;}
@@ -810,14 +813,16 @@ HTML;
     {
         $name = htmlspecialchars($raum['Name'] ?? 'Unbenannt');
 
-        // Temperatur
-        $tempStr = '';
-        $tempCls = '';
-        $tempID  = (int)($raum['TempID'] ?? 0);
+        // Temperatur + Trend
+        $tempStr   = '';
+        $tempCls   = '';
+        $trendIcon = '';
+        $tempID    = (int)($raum['TempID'] ?? 0);
         if ($tempID > 0 && IPS_VariableExists($tempID)) {
-            $val     = round((float)GetValue($tempID), 1);
-            $tempCls = ($val < 18 || $val > 25) ? ' al-r' : '';
-            $tempStr = str_replace('.', ',', (string)$val) . '°';
+            $val       = round((float)GetValue($tempID), 1);
+            $tempCls   = ($val < 18 || $val > 25) ? ' al-r' : '';
+            $tempStr   = str_replace('.', ',', (string)$val) . '°';
+            $trendIcon = $this->GetTempTrend($tempID);
         }
 
         // Licht
@@ -877,7 +882,7 @@ HTML;
             'fenster' => $fensterHTML,
             'hum'     => $humHTML,
             'co2'     => $co2HTML,
-            'temp'    => $tempStr !== '' ? "<span class='p-ico'><i class='fa-solid fa-temperature-half ico-muted'></i></span><span class='{$tempCls}'>{$tempStr}</span>" : '',
+            'temp'    => $tempStr !== '' ? "<span class='p-ico'><i class='fa-solid fa-temperature-half ico-muted'></i></span><span class='{$tempCls}'>{$tempStr}{$trendIcon}</span>" : '',
             'geraet1' => $this->RenderGeraet(1, $raum),
             'geraet2' => $this->RenderGeraet(2, $raum),
             'geraet3' => $this->RenderGeraet(3, $raum),
@@ -906,7 +911,7 @@ HTML;
         else                { $stateClass = ''; }
 
         $head = "<div class='c-head'><span class='c-name'>{$name}</span>"
-            . ($tempStr !== '' ? "<span class='c-temp{$tempCls}'>{$tempStr}</span>" : '')
+            . ($tempStr !== '' ? "<span class='c-temp{$tempCls}'>{$tempStr}{$trendIcon}</span>" : '')
             . "</div>";
 
         $linkID   = (int)($raum['LinkID'] ?? 0);
@@ -915,6 +920,42 @@ HTML;
             : "class='card{$stateClass}'";
 
         return "<div {$cardAttr}>{$head}{$row1}{$row2}</div>";
+    }
+
+    private function GetTempTrend(int $varID): string
+    {
+        static $archiveID = null;
+        if ($archiveID === null) {
+            $ids       = IPS_GetInstanceListByModuleID('{43192F0B-135B-4CE7-A0A7-1475603F3060}');
+            $archiveID = !empty($ids) ? (int)$ids[0] : 0;
+        }
+        if ($archiveID === 0) {
+            return '';
+        }
+        if (!AC_GetLoggingStatus($archiveID, $varID)) {
+            return '';
+        }
+
+        $now    = time();
+        $past   = $now - (45 * 60); // 45-Minuten-Fenster
+        $values = AC_GetLoggedValues($archiveID, $varID, $past, $now, 0);
+
+        if (count($values) < 2) {
+            return '';
+        }
+
+        // AC_GetLoggedValues liefert älteste zuerst
+        $oldest = (float)$values[0]['Value'];
+        $newest = (float)$values[count($values) - 1]['Value'];
+        $delta  = $newest - $oldest;
+
+        if ($delta >= 0.4) {
+            return " <i class='fa-solid fa-arrow-trend-up trend-up'></i>";
+        }
+        if ($delta <= -0.4) {
+            return " <i class='fa-solid fa-arrow-trend-down trend-dn'></i>";
+        }
+        return " <i class='fa-solid fa-minus trend-st'></i>";
     }
 
     private function RenderGeraet(int $nr, array $raum): string
@@ -1077,6 +1118,7 @@ HTML;
         $modus    = ($modusID > 0    && IPS_VariableExists($modusID))    ? htmlspecialchars(GetValueFormatted($modusID)) : null;
         $ventil   = ($ventilID > 0   && IPS_VariableExists($ventilID))   ? (int)GetValue($ventilID)               : null;
 
+        $trendIcon = ($tempID > 0 && IPS_VariableExists($tempID)) ? $this->GetTempTrend($tempID) : '';
         $istStr  = $istTemp  !== null ? str_replace('.', ',', (string)$istTemp)  . '°' : '';
         $sollStr = $sollTemp !== null ? str_replace('.', ',', (string)$sollTemp) . '°' : '';
 
@@ -1088,7 +1130,7 @@ HTML;
         $html  = "<div class='card{$stateClass}'>";
         $html .= "<div class='c-head'><span class='c-name'>{$name}</span>";
         if ($istStr) {
-            $html .= "<span class='c-temp'><i class='fa-solid fa-temperature-half ico-muted'></i> {$istStr}</span>";
+            $html .= "<span class='c-temp'><i class='fa-solid fa-temperature-half ico-muted'></i> {$istStr}{$trendIcon}</span>";
         }
         $html .= "</div>";
 
