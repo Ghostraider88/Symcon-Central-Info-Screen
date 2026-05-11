@@ -1,0 +1,32 @@
+# Changelog
+
+Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
+Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
+
+## [1.0.0] – 2026-05-11
+
+Erstes öffentliches Release.
+
+### Hinzugefügt
+- **Räume** mit 4 konfigurierbaren Anzeige-Slots (Slot1–Slot4)
+- **Schaltbare Geräte** (bis zu 4 pro Raum) als Slot-Inhalt mit individuellem Label
+- **E-Auto-Kacheln**: Batteriestand (SoC) mit Fortschrittsbalken, Reichweite, Ladestatus, Restladezeit, Statustext
+- **Energie/Solar-Kacheln**: Solarproduktion, Hausverbrauch, Netzleistung (Bezug/Einspeisung), Batterie-SoC
+- **Klima/Thermostat-Kacheln**: Ist-/Solltemperatur, Betriebsmodus, Ventil-/Gebläsestellung
+- **Bewässerungs-Kacheln**: Aktivstatus, Restlaufzeit, nächster Start, Bodenfeuchte
+- **Temperatur-Trend-Pfeil** (steigend/fallend/stabil) aus Archive-Control-Historie — mit 4-Stunden-Fallback für Sensoren die nur bei Änderung loggen
+- Trend-Pfeil in Raum-Kacheln, Klima-Kacheln und der Außen-Wetterbar
+- **Außen-Wetterbar** mit Temperaturthema, Komfortlabel, Taupunkt, Tages-Tiefst-/Höchstwert
+- **Bereich-/Stockwerk-Header** mit Aggregat-Statistiken (Licht/Fenster/Rolladen)
+- **Globale Status-Leiste** (Lichter an, Fenster offen, Temperatur- und Luftqualitätswarnungen)
+- Symcon-CSS-Variablen-Integration (`--accent-color`, `--content-color`, `--card-color`)
+- Poppins-Font aus Symcon Tile-Assets
+- Font Awesome 6 Icons via CDN
+- Farbcodierte Kartenränder je Zustand (rot, orange, blau, grün)
+- Klickbare Kacheln für Navigation zu verlinkten Objekten
+
+### Sicherheit
+- XSS-Eskapierung für `GetValueFormatted()`-Ausgaben im Bereich-Header
+- `$safeFooter` wird nun korrekt im HTML-Template verwendet (dead code entfernt)
+- `AC_GetLoggedValues`-Rückgabewert wird auf `is_array()` geprüft vor Verwendung
+- `IPS_GetVariable()`-Ergebnis wird null-safe über `??`-Operator ausgelesen
