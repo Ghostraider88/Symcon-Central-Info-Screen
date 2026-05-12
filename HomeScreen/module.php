@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 class HomeScreen extends IPSModuleStrict
 {
+    private const MODULE_VERSION = '1.0.0';
+
     // -------------------------------------------------------------------------
     // Lifecycle
     // -------------------------------------------------------------------------
@@ -134,7 +136,7 @@ class HomeScreen extends IPSModuleStrict
         $raeume   = json_decode($this->ReadPropertyString('Raeume'), true) ?? [];
 
         $content = $this->BuildContent($bereiche, $raeume);
-        $footer  = 'Aktualisiert: ' . date('d.m.Y H:i:s');
+        $footer  = 'v' . self::MODULE_VERSION . ' · Aktualisiert: ' . date('d.m.Y H:i:s');
 
         return $this->RenderTile($content, $footer);
     }
@@ -146,14 +148,13 @@ class HomeScreen extends IPSModuleStrict
 
         return json_encode([
             'content' => $this->BuildContent($bereiche, $raeume),
-            'footer'  => 'Aktualisiert: ' . date('d.m.Y H:i:s'),
+            'footer'  => 'v' . self::MODULE_VERSION . ' · Aktualisiert: ' . date('d.m.Y H:i:s'),
         ]);
     }
 
     private function RenderTile(string $content, string $footer): string
     {
-        $safeContent = str_replace(['</script>', '<script'], ['<\/script>', '<scr\ipt'], $content);
-        $safeFooter  = htmlspecialchars($footer);
+        $safeFooter = htmlspecialchars($footer);
 
         return <<<HTML
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -230,7 +231,7 @@ class HomeScreen extends IPSModuleStrict
   .out-comfort{font-size:1em;}
   .out-range{display:flex;gap:6px;}
   .out-lo{color:#5b9bd5;font-weight:600;}.out-hi{color:#e53935;font-weight:600;}
-  /* ── Mobile: Wetter-Bar 2-zeilig ──────────────────────────── */
+  /* ── Mobile: Wetter-Bar 2-zeilig ────────────────────────── */
   @media(max-width:520px){
     .out-bar{padding:6px 10px;}
     .out-icon{font-size:1.25em;margin-right:7px;}
@@ -239,7 +240,7 @@ class HomeScreen extends IPSModuleStrict
     .out-seg{flex:0 0 auto;border-right:none;padding:2px 8px 0;}
     .out-seg:not(:last-child){border-right:1px solid var(--div-clr);}
   }
-  /* ── Status & Footer ─────────────────────────────────────── */
+  /* ── Status & Footer ─────────────────────────────────────────────── */
   .stat-bar{display:flex;gap:10px;align-items:center;padding:4px 2px;margin-bottom:6px;font-size:0.83em;flex-wrap:wrap;}
   .stat-ok{color:#4caf50;font-weight:600;}
   .stat-al{display:flex;align-items:center;gap:3px;}
@@ -248,7 +249,7 @@ class HomeScreen extends IPSModuleStrict
   .footer{margin-top:8px;font-size:0.67em;color:var(--footer);text-align:right;}
 </style>
 <div id="cis-content">{$content}</div>
-<div id="cis-footer" class="footer">{$footer}</div>
+<div id="cis-footer" class="footer">{$safeFooter}</div>
 <script>
 function handleMessage(data){
   var d=JSON.parse(data);
@@ -734,7 +735,8 @@ HTML;
             $lichtID = (int)($def['LichtID'] ?? 0);
             if ($lichtID > 0 && IPS_VariableExists($lichtID)) {
                 $val     = GetValue($lichtID);
-                $varType = IPS_GetVariable($lichtID)['VariableType'];
+                $varInfo = @IPS_GetVariable($lichtID);
+                $varType = $varInfo['VariableType'] ?? 0;
                 if ($varType === 0) {
                     $on   = (bool)$val;
                     $cls  = $on ? " class='al-r'" : '';
@@ -751,7 +753,8 @@ HTML;
             $fensterID = (int)($def['FensterID'] ?? 0);
             if ($fensterID > 0 && IPS_VariableExists($fensterID)) {
                 $val     = GetValue($fensterID);
-                $varType = IPS_GetVariable($fensterID)['VariableType'];
+                $varInfo = @IPS_GetVariable($fensterID);
+                $varType = $varInfo['VariableType'] ?? 0;
                 if ($varType === 0) {
                     $open = (bool)$val;
                     $cls  = $open ? " class='al-r'" : '';
@@ -769,12 +772,13 @@ HTML;
             $rolladenID = (int)($def['RolladenID'] ?? 0);
             if ($rolladenID > 0 && IPS_VariableExists($rolladenID)) {
                 $val     = GetValue($rolladenID);
-                $varType = IPS_GetVariable($rolladenID)['VariableType'];
+                $varInfo = @IPS_GetVariable($rolladenID);
+                $varType = $varInfo['VariableType'] ?? 0;
                 if ($varType === 0) {
                     $cls  = $val ? " class='al-r'" : '';
                     $text = $val ? 'offen' : 'zu';
                 } else {
-                    $formatted = GetValueFormatted($rolladenID);
+                    $formatted = htmlspecialchars(GetValueFormatted($rolladenID));
                     $cls  = $val > 0 ? " class='al-r'" : '';
                     $text = $formatted;
                 }
@@ -808,7 +812,7 @@ HTML;
         };
     }
 
-    // ── Raum-Kachel ──────────────────────────────────────────────────────────
+    // ── Raum-Kachel ────────────────────────────────────────────────────────────────────
 
     private function BuildCard_Raum(array $raum): string
     {
@@ -941,12 +945,12 @@ HTML;
         $values = AC_GetLoggedValues($archiveID, $varID, $now - 45 * 60, $now, 0);
 
         // Sensor loggt nur bei Änderung → 45-Min-Fenster leer → 4-Std.-Fenster probieren
-        if (count($values) < 2) {
+        if (!is_array($values) || count($values) < 2) {
             $values = AC_GetLoggedValues($archiveID, $varID, $now - 4 * 3600, $now, 0);
         }
 
         // Immer noch < 2 Werte → Temperatur ist konstant stabil
-        if (count($values) < 2) {
+        if (!is_array($values) || count($values) < 2) {
             return " <i class='fa-solid fa-arrow-right trend-st'></i>";
         }
 
@@ -977,7 +981,7 @@ HTML;
         return "<span class='p-ico'><i class='fa-solid fa-plug {$ico}'></i></span><span{$cls}>{$label}</span>";
     }
 
-    // ── E-Auto-Kachel ─────────────────────────────────────────────────────────
+    // ── E-Auto-Kachel ─────────────────────────────────────────────────────────────────────
 
     private function BuildCard_Auto(array $item): string
     {
@@ -1057,7 +1061,7 @@ HTML;
         return $html;
     }
 
-    // ── Energie/Solar-Kachel ──────────────────────────────────────────────────
+    // ── Energie/Solar-Kachel ──────────────────────────────────────────────────────
 
     private function BuildCard_Energie(array $item): string
     {
@@ -1108,7 +1112,7 @@ HTML;
         return $html;
     }
 
-    // ── Klima/Thermostat-Kachel ───────────────────────────────────────────────
+    // ── Klima/Thermostat-Kachel ─────────────────────────────────────────────────────
 
     private function BuildCard_Klima(array $item): string
     {
@@ -1160,7 +1164,7 @@ HTML;
         return $html;
     }
 
-    // ── Bewässerungs-Kachel ───────────────────────────────────────────────────
+    // ── Bewässerungs-Kachel ─────────────────────────────────────────────────────────
 
     private function BuildCard_Wasser(array $item): string
     {
