@@ -97,7 +97,7 @@ class HomeScreen extends IPSModuleStrict
                 foreach (['SoCID', 'RangeID', 'ChargingID', 'ChargeMinID', 'StatusID',
                           'SolarID', 'VerbrauchID', 'NetzID', 'BatterieID',
                           'TempID', 'SollTempID', 'ModusID', 'VentilID',
-                          'AktivID', 'NextStartID', 'LaufzeitID', 'BodenID',
+                          'AktivID', 'NextStartID', 'LaufzeitID', 'BodenID', 'BedarfID', 'TagesRestID',
                           'LuefterID', 'LueftModusID', 'FrischluftID', 'ZuluftID', 'BetriebsartID',
                           'TempMitteID', 'TempObenID', 'KompressorID', 'HeizstabID'] as $key) {
                     $id = (int)($item[$key] ?? 0);
@@ -446,9 +446,11 @@ HTML;
                             ['caption' => 'Name',              'name' => 'Name',       'width' => '110px', 'add' => 'Zone',  'edit' => ['type' => 'ValidationTextBox']],
                             ['caption' => 'Navigation',        'name' => 'LinkID',     'width' => '120px', 'add' => 0,       'edit' => ['type' => 'SelectObject']],
                             ['caption' => 'Aktiv (Bool)',      'name' => 'AktivID',    'width' => '110px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
-                            ['caption' => 'Nächster Start',    'name' => 'NextStartID','width' => '120px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
-                            ['caption' => 'Restlaufzeit (min)','name' => 'LaufzeitID', 'width' => '130px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
-                            ['caption' => 'Bodenfeuchte (%)',  'name' => 'BodenID',    'width' => '120px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Nächster Start',       'name' => 'NextStartID','width' => '120px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Restlaufzeit (min)',   'name' => 'LaufzeitID', 'width' => '130px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Bodenfeuchte (%)',     'name' => 'BodenID',    'width' => '120px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Heutiger Bedarf',      'name' => 'BedarfID',   'width' => '130px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Heutige Restlaufzeit', 'name' => 'TagesRestID','width' => '140px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
                         ],
                     ]],
                 ],
@@ -1229,11 +1231,15 @@ HTML;
         $nextStartID = (int)($item['NextStartID'] ?? 0);
         $laufzeitID  = (int)($item['LaufzeitID']  ?? 0);
         $bodenID     = (int)($item['BodenID']     ?? 0);
+        $bedarfID    = (int)($item['BedarfID']    ?? 0);
+        $tagesRestID = (int)($item['TagesRestID'] ?? 0);
 
-        $isAktiv  = ($aktivID > 0     && IPS_VariableExists($aktivID))     && (bool)GetValue($aktivID);
-        $nextStr  = ($nextStartID > 0 && IPS_VariableExists($nextStartID)) ? htmlspecialchars(GetValueFormatted($nextStartID)) : null;
-        $laufzeit = ($laufzeitID > 0  && IPS_VariableExists($laufzeitID))  ? (int)GetValue($laufzeitID) : null;
-        $boden    = ($bodenID > 0     && IPS_VariableExists($bodenID))     ? (int)GetValue($bodenID)    : null;
+        $isAktiv   = ($aktivID > 0     && IPS_VariableExists($aktivID))     && (bool)GetValue($aktivID);
+        $nextStr   = ($nextStartID > 0 && IPS_VariableExists($nextStartID)) ? htmlspecialchars(GetValueFormatted($nextStartID)) : null;
+        $laufzeit  = ($laufzeitID > 0  && IPS_VariableExists($laufzeitID))  ? (int)GetValue($laufzeitID)  : null;
+        $boden     = ($bodenID > 0     && IPS_VariableExists($bodenID))     ? (int)GetValue($bodenID)     : null;
+        $bedarfStr = ($bedarfID > 0    && IPS_VariableExists($bedarfID))    ? htmlspecialchars(GetValueFormatted($bedarfID))    : null;
+        $tagesRest = ($tagesRestID > 0 && IPS_VariableExists($tagesRestID)) ? (int)GetValue($tagesRestID) : null;
 
         $stateClass = $isAktiv ? ' s-active' : '';
 
@@ -1247,6 +1253,13 @@ HTML;
         if ($isAktiv && $laufzeit !== null && $laufzeit > 0) {
             $restStr = ($laufzeit >= 60 ? (floor($laufzeit / 60) . 'h ') : '') . ($laufzeit % 60) . 'min';
             $html   .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-clock ico-active'></i></span><span>noch {$restStr}</span></span></div>";
+        }
+        if ($tagesRest !== null) {
+            $tagesStr = ($tagesRest >= 60 ? (floor($tagesRest / 60) . 'h ') : '') . ($tagesRest % 60) . 'min';
+            $html    .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-hourglass-half ico-muted'></i></span><span>Heute noch: {$tagesStr}</span></span></div>";
+        }
+        if ($bedarfStr !== null) {
+            $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-chart-simple ico-muted'></i></span><span>Bedarf: {$bedarfStr}</span></span></div>";
         }
         if ($nextStr) {
             $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-calendar ico-muted'></i></span><span>{$nextStr}</span></span></div>";
