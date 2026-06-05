@@ -302,7 +302,7 @@ class HomeScreen extends IPSModuleStrict
   .fa-seedling::before{content:"✿";}
   .fa-arrow-right-to-bracket::before{content:"→";}
   .fa-arrow-right-from-bracket::before{content:"←";}
-  .fa-gear::before{content:"\2699\FE0E";}
+  .fa-gear::before{content:"⚙";font-variant-emoji:text;}
   .fa-compass::before{content:"⊕";}
   .fa-cloud-rain::before{content:"≈";}
   .fa-cloud-showers-heavy::before{content:"≋";}
