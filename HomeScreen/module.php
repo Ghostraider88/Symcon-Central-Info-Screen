@@ -264,14 +264,14 @@ class HomeScreen extends IPSModuleStrict
   .footer{margin-top:8px;font-size:0.67em;color:var(--footer);text-align:right;}
   .out-bar.clickable{cursor:pointer;}.out-bar.clickable:hover{filter:brightness(0.96);}
   .out-warn{display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:3px;font-size:0.75em;font-weight:600;}
+  .out-warn-0{background:#4caf50;color:#fff;}
   .out-warn-1{background:#f9a825;color:#333;}
   .out-warn-2{background:#e65c00;color:#fff;}
   .out-warn-3{background:#c62828;color:#fff;}
   .out-warn-4{background:#4a0000;color:#fff;}
   .out-warn-10{background:#e91e63;color:#fff;}
   .out-warn-11{background:#7b1fa2;color:#fff;}
-  .out-row2{display:flex;align-items:center;flex-wrap:wrap;width:100%;margin-top:5px;padding-top:5px;border-top:1px solid var(--div-clr);}
-  .out-seg2{display:flex;align-items:center;gap:4px;font-size:0.80em;color:var(--text-muted);padding:0 10px 0 0;white-space:nowrap;}
+  .out-row2{display:flex;width:100%;margin-top:5px;padding-top:5px;border-top:1px solid var(--div-clr);}
 </style>
 <div id="cis-content">{$content}</div>
 <div id="cis-footer" class="footer">{$safeFooter}</div>
@@ -694,24 +694,23 @@ HTML;
             $maxStr = str_replace('.', ',', (string)round((float)GetValue($tempMaxID), 1)) . '°';
         }
 
-        // Wetterwarnung
-        $warnLevel = 0;
-        $warnHtml  = '';
+        // Wetterwarnung – immer anzeigen wenn konfiguriert
+        $warnHtml = '';
         if ($warnID > 0 && IPS_VariableExists($warnID)) {
             $warnLevel = (int)GetValue($warnID);
-            if ($warnLevel > 0) {
-                $warnText = htmlspecialchars(GetValueFormatted($warnID));
-                $warnCls  = match(true) {
-                    $warnLevel === 1               => 'out-warn-1',
-                    $warnLevel === 2               => 'out-warn-2',
-                    $warnLevel === 3               => 'out-warn-3',
-                    $warnLevel >= 4 && $warnLevel < 10 => 'out-warn-4',
-                    $warnLevel === 10              => 'out-warn-10',
-                    $warnLevel >= 11               => 'out-warn-11',
-                    default                        => 'out-warn-1',
-                };
-                $warnHtml = "<div class='out-seg'><span class='out-warn {$warnCls}'><i class='fa-solid fa-triangle-exclamation'></i> {$warnText}</span></div>";
-            }
+            $warnText  = htmlspecialchars(GetValueFormatted($warnID));
+            $warnCls   = match(true) {
+                $warnLevel === 0                       => 'out-warn-0',
+                $warnLevel === 1                       => 'out-warn-1',
+                $warnLevel === 2                       => 'out-warn-2',
+                $warnLevel === 3                       => 'out-warn-3',
+                $warnLevel >= 4 && $warnLevel < 10     => 'out-warn-4',
+                $warnLevel === 10                      => 'out-warn-10',
+                $warnLevel >= 11                       => 'out-warn-11',
+                default                                => 'out-warn-0',
+            };
+            $warnIcon = $warnLevel === 0 ? 'fa-shield-halved' : 'fa-triangle-exclamation';
+            $warnHtml = "<div class='out-seg'><span class='out-warn {$warnCls}'><i class='fa-solid {$warnIcon}'></i> {$warnText}</span></div>";
         }
 
         // Klick / Navigation
@@ -739,19 +738,19 @@ HTML;
         }
         $html .= $warnHtml;
 
-        // Zweite Zeile: Wind & Regen
+        // Zweite Zeile: Wind & Regen – gleiche Segment-Optik wie Zeile 1
         $row2 = '';
         if ($windRichtID > 0 && IPS_VariableExists($windRichtID)) {
-            $row2 .= "<span class='out-seg2'><i class='fa-solid fa-compass ico-muted'></i> " . htmlspecialchars(GetValueFormatted($windRichtID)) . "</span>";
+            $row2 .= "<div class='out-seg'><i class='fa-solid fa-compass' style='margin-right:3px'></i>" . htmlspecialchars(GetValueFormatted($windRichtID)) . "</div>";
         }
         if ($windBoenID > 0 && IPS_VariableExists($windBoenID)) {
-            $row2 .= "<span class='out-seg2'><i class='fa-solid fa-wind ico-muted'></i> " . htmlspecialchars(GetValueFormatted($windBoenID)) . "</span>";
+            $row2 .= "<div class='out-seg'><i class='fa-solid fa-wind' style='margin-right:3px'></i>" . htmlspecialchars(GetValueFormatted($windBoenID)) . "</div>";
         }
         if ($regenRateID > 0 && IPS_VariableExists($regenRateID)) {
-            $row2 .= "<span class='out-seg2'><i class='fa-solid fa-cloud-rain ico-muted'></i> " . htmlspecialchars(GetValueFormatted($regenRateID)) . "</span>";
+            $row2 .= "<div class='out-seg'><i class='fa-solid fa-cloud-rain' style='margin-right:3px'></i>" . htmlspecialchars(GetValueFormatted($regenRateID)) . "</div>";
         }
         if ($regen24ID > 0 && IPS_VariableExists($regen24ID)) {
-            $row2 .= "<span class='out-seg2'><i class='fa-solid fa-cloud-showers-heavy ico-muted'></i> 24h: " . htmlspecialchars(GetValueFormatted($regen24ID)) . "</span>";
+            $row2 .= "<div class='out-seg'><i class='fa-solid fa-cloud-showers-heavy' style='margin-right:3px'></i>24h: " . htmlspecialchars(GetValueFormatted($regen24ID)) . "</div>";
         }
         if ($row2 !== '') {
             $html .= "<div class='out-row2'>{$row2}</div>";
