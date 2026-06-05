@@ -2,9 +2,9 @@
 
 Visualisierungs-Modul für **IP-Symcon**, das einen kompakten Überblick über das gesamte Smart Home als Kachel-Übersicht darstellt: Räume, E-Autos, Solar-/Energiestatus, Klima und Bewässerung – gruppiert nach Stockwerken bzw. Bereichen.
 
-[![Version](https://img.shields.io/badge/Version-1.0.0-blue)](https://github.com/Ghostraider88/Symcon-Central-Info-Screen/releases)
+[![Version](https://img.shields.io/badge/Version-1.0.1-blue)](https://github.com/Ghostraider88/Symcon-Central-Info-Screen/releases)
 [![Lizenz](https://img.shields.io/badge/Lizenz-MIT-green)](LICENSE)
-[![IP-Symcon](https://img.shields.io/badge/IP--Symcon-%E2%89%A5%208.1-orange)](https://www.symcon.de)
+[![IP-Symcon](https://img.shields.io/badge/IP--Symcon-%E2%89%A5%208.2-orange)](https://www.symcon.de)
 
 ---
 
@@ -41,9 +41,8 @@ Visualisierungs-Modul für **IP-Symcon**, das einen kompakten Überblick über d
 
 | Anforderung | Details |
 |---|---|
-| IP-Symcon | Version ≥ 8.1 |
+| IP-Symcon | Version ≥ 8.2 |
 | Archive-Control | Optional – für den Temperatur-Trend-Pfeil (Variablen müssen aufgezeichnet sein) |
-| Internetzugang | Für Font Awesome 6 Icons (CDN) |
 
 ---
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 class HomeScreen extends IPSModuleStrict
 {
-    private const MODULE_VERSION = '1.0.0';
+    private const MODULE_VERSION = '1.0.1';
 
     // -------------------------------------------------------------------------
     // Lifecycle
@@ -173,7 +173,7 @@ class HomeScreen extends IPSModuleStrict
 
         return <<<HTML
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous">
+<script src="/icons.js"></script>
 <style>
   /* Poppins – Symcon Tile Assets */
   @font-face{font-family:'Poppins';src:url('/tile/assets/google_fonts/Poppins-Regular.ttf') format('truetype');font-weight:400;font-style:normal;}
@@ -272,6 +272,45 @@ class HomeScreen extends IPSModuleStrict
   .out-warn-10{background:#e91e63;color:#fff;}
   .out-warn-11{background:#7b1fa2;color:#fff;}
   .out-row2{display:flex;width:100%;margin-top:5px;padding-top:5px;border-top:1px solid var(--div-clr);}
+  /* Icon-Symbole – kein externer CDN, kein Internet erforderlich */
+  .fa-solid{font-style:normal;display:inline-block;line-height:1;}
+  .fa-solid::before{font-family:system-ui,'Segoe UI Symbol','Apple Symbols','Noto Sans',sans-serif;}
+  .fa-check::before{content:"✓";}
+  .fa-lightbulb::before{content:"◉";}
+  .fa-door-open::before{content:"⊏";}
+  .fa-door-closed::before{content:"⊐";}
+  .fa-temperature-half::before{content:"▾";}
+  .fa-temperature-high::before{content:"▴";}
+  .fa-wind::before{content:"≈";}
+  .fa-bars::before{content:"≡";}
+  .fa-plug::before{content:"⊓";}
+  .fa-car::before{content:"▶";}
+  .fa-bolt::before{content:"↯";}
+  .fa-road::before{content:"↕";}
+  .fa-sun::before{content:"✦";}
+  .fa-house::before{content:"⌂";}
+  .fa-plug-circle-bolt::before{content:"⊛";}
+  .fa-battery-half::before{content:"▬";}
+  .fa-sliders::before{content:"≣";}
+  .fa-circle-half-stroke::before{content:"◑";}
+  .fa-fan::before{content:"✧";}
+  .fa-droplet::before{content:"◉";}
+  .fa-clock::before{content:"◔";}
+  .fa-hourglass-half::before{content:"▽";}
+  .fa-chart-simple::before{content:"▲";}
+  .fa-calendar::before{content:"⊟";}
+  .fa-seedling::before{content:"✿";}
+  .fa-arrow-right-to-bracket::before{content:"→";}
+  .fa-arrow-right-from-bracket::before{content:"←";}
+  .fa-gear::before{content:"\2699\FE0E";}
+  .fa-compass::before{content:"⊕";}
+  .fa-cloud-rain::before{content:"≈";}
+  .fa-cloud-showers-heavy::before{content:"≋";}
+  .fa-shield-halved::before{content:"◈";}
+  .fa-triangle-exclamation::before{content:"△";}
+  .fa-arrow-right::before{content:"→";}
+  .fa-arrow-trend-up::before{content:"↗";}
+  .fa-arrow-trend-down::before{content:"↘";}
 </style>
 <div id="cis-content">{$content}</div>
 <div id="cis-footer" class="footer">{$safeFooter}</div>
@@ -921,10 +960,11 @@ HTML;
         }
 
         $linkID      = (int)(($def ?? [])['LinkID'] ?? 0);
-        $clickable   = $linkID > 0 ? " clickable' onclick='openObject({$linkID})" : '';
+        $clickCls    = $linkID > 0 ? ' clickable' : '';
+        $clickAttr   = $linkID > 0 ? " onclick='openObject({$linkID})'" : '';
         $displayName = $name !== '' ? htmlspecialchars($name) : 'Ohne Bereich';
 
-        return "<div class='grp-hdr{$clickable}'>"
+        return "<div class='grp-hdr{$clickCls}'{$clickAttr}>"
             . "<span class='grp-name'>{$displayName}</span>"
             . ($stats !== '' ? "<span class='grp-chips'>{$stats}</span>" : '')
             . "</div>";
