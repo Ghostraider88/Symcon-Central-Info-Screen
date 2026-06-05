@@ -14,12 +14,14 @@ class HomeScreen extends IPSModuleStrict
     {
         parent::Create();
 
-        $this->RegisterPropertyString('Bereiche',       '[]');
-        $this->RegisterPropertyString('Raeume',         '[]');
-        $this->RegisterPropertyString('Fahrzeuge',      '[]');
-        $this->RegisterPropertyString('EnergieKacheln', '[]');
-        $this->RegisterPropertyString('KlimaGeraete',   '[]');
-        $this->RegisterPropertyString('Bewaesserung',   '[]');
+        $this->RegisterPropertyString('Bereiche',         '[]');
+        $this->RegisterPropertyString('Raeume',           '[]');
+        $this->RegisterPropertyString('Fahrzeuge',        '[]');
+        $this->RegisterPropertyString('EnergieKacheln',   '[]');
+        $this->RegisterPropertyString('KlimaGeraete',     '[]');
+        $this->RegisterPropertyString('Bewaesserung',     '[]');
+        $this->RegisterPropertyString('Lueftungsanlagen', '[]');
+        $this->RegisterPropertyString('Waermepumpen',     '[]');
 
         $this->RegisterPropertyInteger('AussenTempID',    0);
         $this->RegisterPropertyInteger('AussenTempMinID', 0);
@@ -85,7 +87,7 @@ class HomeScreen extends IPSModuleStrict
             }
         }
 
-        foreach (['Fahrzeuge', 'EnergieKacheln', 'KlimaGeraete', 'Bewaesserung'] as $listKey) {
+        foreach (['Fahrzeuge', 'EnergieKacheln', 'KlimaGeraete', 'Bewaesserung', 'Lueftungsanlagen', 'Waermepumpen'] as $listKey) {
             $items = json_decode($this->ReadPropertyString($listKey), true) ?? [];
             foreach ($items as $item) {
                 $linkID = (int)($item['LinkID'] ?? 0);
@@ -95,7 +97,9 @@ class HomeScreen extends IPSModuleStrict
                 foreach (['SoCID', 'RangeID', 'ChargingID', 'ChargeMinID', 'StatusID',
                           'SolarID', 'VerbrauchID', 'NetzID', 'BatterieID',
                           'TempID', 'SollTempID', 'ModusID', 'VentilID',
-                          'AktivID', 'NextStartID', 'LaufzeitID', 'BodenID'] as $key) {
+                          'AktivID', 'NextStartID', 'LaufzeitID', 'BodenID',
+                          'LuefterID', 'LueftModusID', 'FrischluftID', 'ZuluftID', 'BetriebsartID',
+                          'TempMitteID', 'TempObenID', 'KompressorID', 'HeizstabID'] as $key) {
                     $id = (int)($item[$key] ?? 0);
                     if ($id > 0 && IPS_VariableExists($id)) {
                         $varIDs[] = $id;
@@ -448,6 +452,51 @@ HTML;
                         ],
                     ]],
                 ],
+                [
+                    'type'    => 'ExpansionPanel',
+                    'caption' => 'Lüftungsanlage',
+                    'items'   => [[
+                        'type'     => 'List',
+                        'name'     => 'Lueftungsanlagen',
+                        'caption'  => 'Lüftungsanlagen',
+                        'add'      => true,
+                        'delete'   => true,
+                        'rowCount' => 6,
+                        'columns'  => [
+                            ['caption' => 'Pos.',             'name' => 'Position',     'width' => '50px',  'add' => 0,            'edit' => ['type' => 'NumberSpinner', 'minimum' => 0, 'maximum' => 999]],
+                            ['caption' => 'Bereich',          'name' => 'Bereich',      'width' => '110px', 'add' => '',           'edit' => ['type' => 'Select', 'options' => $bereichOptionen]],
+                            ['caption' => 'Name',             'name' => 'Name',         'width' => '110px', 'add' => 'Lüftung',    'edit' => ['type' => 'ValidationTextBox']],
+                            ['caption' => 'Navigation',       'name' => 'LinkID',       'width' => '120px', 'add' => 0,            'edit' => ['type' => 'SelectObject']],
+                            ['caption' => 'Lüfterstufe',      'name' => 'LuefterID',    'width' => '120px', 'add' => 0,            'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Betriebsmodus',    'name' => 'LueftModusID', 'width' => '120px', 'add' => 0,            'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Frischluft (°C)',  'name' => 'FrischluftID', 'width' => '120px', 'add' => 0,            'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Zuluft (°C)',      'name' => 'ZuluftID',     'width' => '120px', 'add' => 0,            'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Betriebsart',      'name' => 'BetriebsartID','width' => '120px', 'add' => 0,            'edit' => ['type' => 'SelectVariable']],
+                        ],
+                    ]],
+                ],
+                [
+                    'type'    => 'ExpansionPanel',
+                    'caption' => 'Warmwasser-Wärmepumpe',
+                    'items'   => [[
+                        'type'     => 'List',
+                        'name'     => 'Waermepumpen',
+                        'caption'  => 'Wärmepumpen',
+                        'add'      => true,
+                        'delete'   => true,
+                        'rowCount' => 6,
+                        'columns'  => [
+                            ['caption' => 'Pos.',              'name' => 'Position',    'width' => '50px',  'add' => 0,              'edit' => ['type' => 'NumberSpinner', 'minimum' => 0, 'maximum' => 999]],
+                            ['caption' => 'Bereich',           'name' => 'Bereich',     'width' => '110px', 'add' => '',             'edit' => ['type' => 'Select', 'options' => $bereichOptionen]],
+                            ['caption' => 'Name',              'name' => 'Name',        'width' => '110px', 'add' => 'Wärmepumpe',   'edit' => ['type' => 'ValidationTextBox']],
+                            ['caption' => 'Navigation',        'name' => 'LinkID',      'width' => '120px', 'add' => 0,              'edit' => ['type' => 'SelectObject']],
+                            ['caption' => 'Temp. Mitte (°C)',  'name' => 'TempMitteID', 'width' => '130px', 'add' => 0,              'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Temp. Oben (°C)',   'name' => 'TempObenID',  'width' => '130px', 'add' => 0,              'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Zustand Kompressor','name' => 'KompressorID','width' => '140px', 'add' => 0,              'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Zustand Heizstab',  'name' => 'HeizstabID',  'width' => '130px', 'add' => 0,              'edit' => ['type' => 'SelectVariable']],
+                        ],
+                    ]],
+                ],
             ],
             'actions' => [
                 [
@@ -478,19 +527,23 @@ HTML;
 
     private function BuildContent(array $bereiche, array $raeume): string
     {
-        $fahrzeuge      = json_decode($this->ReadPropertyString('Fahrzeuge'),      true) ?? [];
-        $energieKacheln = json_decode($this->ReadPropertyString('EnergieKacheln'), true) ?? [];
-        $klimaGeraete   = json_decode($this->ReadPropertyString('KlimaGeraete'),   true) ?? [];
-        $bewaesserung   = json_decode($this->ReadPropertyString('Bewaesserung'),   true) ?? [];
+        $fahrzeuge        = json_decode($this->ReadPropertyString('Fahrzeuge'),        true) ?? [];
+        $energieKacheln   = json_decode($this->ReadPropertyString('EnergieKacheln'),   true) ?? [];
+        $klimaGeraete     = json_decode($this->ReadPropertyString('KlimaGeraete'),     true) ?? [];
+        $bewaesserung     = json_decode($this->ReadPropertyString('Bewaesserung'),     true) ?? [];
+        $lueftungsanlagen = json_decode($this->ReadPropertyString('Lueftungsanlagen'), true) ?? [];
+        $waermepumpen     = json_decode($this->ReadPropertyString('Waermepumpen'),     true) ?? [];
 
-        foreach ($raeume        as &$r) { $r['__typ'] = 'raum'; }
-        foreach ($fahrzeuge     as &$f) { $f['__typ'] = 'auto'; }
-        foreach ($energieKacheln as &$e) { $e['__typ'] = 'energie'; }
-        foreach ($klimaGeraete  as &$k) { $k['__typ'] = 'klima'; }
-        foreach ($bewaesserung  as &$b) { $b['__typ'] = 'wasser'; }
-        unset($r, $f, $e, $k, $b);
+        foreach ($raeume          as &$r) { $r['__typ'] = 'raum'; }
+        foreach ($fahrzeuge       as &$f) { $f['__typ'] = 'auto'; }
+        foreach ($energieKacheln  as &$e) { $e['__typ'] = 'energie'; }
+        foreach ($klimaGeraete    as &$k) { $k['__typ'] = 'klima'; }
+        foreach ($bewaesserung    as &$b) { $b['__typ'] = 'wasser'; }
+        foreach ($lueftungsanlagen as &$l) { $l['__typ'] = 'lueftung'; }
+        foreach ($waermepumpen    as &$w) { $w['__typ'] = 'waermepumpe'; }
+        unset($r, $f, $e, $k, $b, $l, $w);
 
-        $alleItems = array_merge($raeume, $fahrzeuge, $energieKacheln, $klimaGeraete, $bewaesserung);
+        $alleItems = array_merge($raeume, $fahrzeuge, $energieKacheln, $klimaGeraete, $bewaesserung, $lueftungsanlagen, $waermepumpen);
 
         if (empty($bereiche) && empty($alleItems)) {
             return '<p class="empty">Keine Kacheln konfiguriert.</p>';
@@ -804,11 +857,13 @@ HTML;
     private function BuildRoomCard(array $item): string
     {
         return match($item['__typ'] ?? 'raum') {
-            'auto'    => $this->BuildCard_Auto($item),
-            'energie' => $this->BuildCard_Energie($item),
-            'klima'   => $this->BuildCard_Klima($item),
-            'wasser'  => $this->BuildCard_Wasser($item),
-            default   => $this->BuildCard_Raum($item),
+            'auto'        => $this->BuildCard_Auto($item),
+            'energie'     => $this->BuildCard_Energie($item),
+            'klima'       => $this->BuildCard_Klima($item),
+            'wasser'      => $this->BuildCard_Wasser($item),
+            'lueftung'    => $this->BuildCard_Lueftung($item),
+            'waermepumpe' => $this->BuildCard_Waermepumpe($item),
+            default       => $this->BuildCard_Raum($item),
         };
     }
 
@@ -1199,6 +1254,114 @@ HTML;
         if ($boden !== null) {
             $bodenCls = $boden < 30 ? 'ico-warn' : 'ico-muted';
             $html    .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-seedling {$bodenCls}'></i></span><span>Boden: {$boden}%</span></span></div>";
+        }
+
+        $linkID = (int)($item['LinkID'] ?? 0);
+        if ($linkID > 0) {
+            $html = str_replace("<div class='card{$stateClass}'>", "<div class='card{$stateClass} clickable' onclick='openObject({$linkID})'>", $html);
+        }
+
+        $html .= "</div>";
+        return $html;
+    }
+
+    // ── Lüftungsanlage-Kachel ─────────────────────────────────────────────────
+
+    private function BuildCard_Lueftung(array $item): string
+    {
+        $name = htmlspecialchars($item['Name'] ?? '');
+
+        $luefterID     = (int)($item['LuefterID']     ?? 0);
+        $lueftModusID  = (int)($item['LueftModusID']  ?? 0);
+        $frischluftID  = (int)($item['FrischluftID']  ?? 0);
+        $zuluftID      = (int)($item['ZuluftID']      ?? 0);
+        $betriebsartID = (int)($item['BetriebsartID'] ?? 0);
+
+        $luefter     = ($luefterID > 0     && IPS_VariableExists($luefterID))     ? (int)GetValue($luefterID)                                   : null;
+        $modus       = ($lueftModusID > 0  && IPS_VariableExists($lueftModusID))  ? htmlspecialchars(GetValueFormatted($lueftModusID))           : null;
+        $frischluft  = ($frischluftID > 0  && IPS_VariableExists($frischluftID))  ? round((float)GetValue($frischluftID), 1)                     : null;
+        $zuluft      = ($zuluftID > 0      && IPS_VariableExists($zuluftID))      ? round((float)GetValue($zuluftID), 1)                         : null;
+        $betriebsart = ($betriebsartID > 0 && IPS_VariableExists($betriebsartID)) ? htmlspecialchars(GetValueFormatted($betriebsartID))          : null;
+
+        $isActive   = $luefter !== null && $luefter > 0;
+        $stateClass = $isActive ? ' s-active' : '';
+        $fanCls     = $isActive ? 'ico-active' : 'ico-muted';
+
+        $html  = "<div class='card{$stateClass}'>";
+        $html .= "<div class='c-head'><span class='c-name'>{$name}</span>";
+        if ($luefter !== null) {
+            $html .= "<span class='c-temp'><i class='fa-solid fa-fan {$fanCls}'></i> Stufe {$luefter}</span>";
+        }
+        $html .= "</div>";
+
+        if ($modus) {
+            $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-circle-half-stroke ico-muted'></i></span><span>{$modus}</span></span></div>";
+        }
+        if ($betriebsart) {
+            $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-sliders ico-muted'></i></span><span>{$betriebsart}</span></span></div>";
+        }
+        if ($frischluft !== null || $zuluft !== null) {
+            $frStr = $frischluft !== null ? str_replace('.', ',', (string)$frischluft) . '°' : '–';
+            $zuStr = $zuluft     !== null ? str_replace('.', ',', (string)$zuluft)     . '°' : '–';
+            $html .= "<div class='p-row'>"
+                . "<span class='p-cell'><span class='p-ico'><i class='fa-solid fa-arrow-right-to-bracket ico-muted'></i></span><span>{$frStr}</span></span>"
+                . "<span class='p-cell'><span class='p-ico'><i class='fa-solid fa-arrow-right-from-bracket ico-muted'></i></span><span>{$zuStr}</span></span>"
+                . "</div>";
+        }
+
+        $linkID = (int)($item['LinkID'] ?? 0);
+        if ($linkID > 0) {
+            $html = str_replace("<div class='card{$stateClass}'>", "<div class='card{$stateClass} clickable' onclick='openObject({$linkID})'>", $html);
+        }
+
+        $html .= "</div>";
+        return $html;
+    }
+
+    // ── Warmwasser-Wärmepumpe-Kachel ──────────────────────────────────────────
+
+    private function BuildCard_Waermepumpe(array $item): string
+    {
+        $name = htmlspecialchars($item['Name'] ?? '');
+
+        $tempMitteID  = (int)($item['TempMitteID']  ?? 0);
+        $tempObenID   = (int)($item['TempObenID']   ?? 0);
+        $kompressorID = (int)($item['KompressorID'] ?? 0);
+        $heizstabID   = (int)($item['HeizstabID']   ?? 0);
+
+        $tempMitte  = ($tempMitteID > 0  && IPS_VariableExists($tempMitteID))  ? round((float)GetValue($tempMitteID), 1)                    : null;
+        $tempOben   = ($tempObenID > 0   && IPS_VariableExists($tempObenID))   ? round((float)GetValue($tempObenID), 1)                     : null;
+        $kompStr    = ($kompressorID > 0 && IPS_VariableExists($kompressorID)) ? htmlspecialchars(GetValueFormatted($kompressorID))          : null;
+        $heizStr    = ($heizstabID > 0   && IPS_VariableExists($heizstabID))   ? htmlspecialchars(GetValueFormatted($heizstabID))            : null;
+        $isKompAn   = ($kompressorID > 0 && IPS_VariableExists($kompressorID)) && (bool)GetValue($kompressorID);
+        $isHzAn     = ($heizstabID > 0   && IPS_VariableExists($heizstabID))   && (bool)GetValue($heizstabID);
+
+        if ($isKompAn)   { $stateClass = ' s-charging'; }  // blau = Kompressor aktiv
+        elseif ($isHzAn) { $stateClass = ' s-warn'; }      // orange = Heizstab aktiv
+        else             { $stateClass = ''; }
+
+        $tempObenStr  = $tempOben  !== null ? str_replace('.', ',', (string)$tempOben)  . '°' : '';
+        $tempMitteStr = $tempMitte !== null ? str_replace('.', ',', (string)$tempMitte) . '°' : '';
+
+        $html  = "<div class='card{$stateClass}'>";
+        $html .= "<div class='c-head'><span class='c-name'>{$name}</span>";
+        if ($tempObenStr) {
+            $html .= "<span class='c-temp'><i class='fa-solid fa-temperature-high ico-muted'></i> {$tempObenStr}</span>";
+        }
+        $html .= "</div>";
+
+        if ($tempMitteStr) {
+            $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-temperature-half ico-muted'></i></span><span>Mitte: {$tempMitteStr}</span></span></div>";
+        }
+        if ($kompStr !== null) {
+            $kCls = $isKompAn ? 'ico-charging' : 'ico-muted';
+            $kTxt = $isKompAn ? " class='ico-charging'" : '';
+            $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-gear {$kCls}'></i></span><span{$kTxt}>{$kompStr}</span></span></div>";
+        }
+        if ($heizStr !== null) {
+            $hCls = $isHzAn ? 'ico-warn' : 'ico-muted';
+            $hTxt = $isHzAn ? " class='al-y'" : '';
+            $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-bolt {$hCls}'></i></span><span{$hTxt}>{$heizStr}</span></span></div>";
         }
 
         $linkID = (int)($item['LinkID'] ?? 0);
