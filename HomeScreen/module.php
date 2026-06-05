@@ -27,6 +27,12 @@ class HomeScreen extends IPSModuleStrict
         $this->RegisterPropertyInteger('AussenTempMinID', 0);
         $this->RegisterPropertyInteger('AussenTempMaxID', 0);
         $this->RegisterPropertyInteger('AussenHumID',     0);
+        $this->RegisterPropertyInteger('WindRichtungID',  0);
+        $this->RegisterPropertyInteger('WindBoenID',      0);
+        $this->RegisterPropertyInteger('RegenRateID',     0);
+        $this->RegisterPropertyInteger('RegenMenge24ID',  0);
+        $this->RegisterPropertyInteger('WetterwarnungID', 0);
+        $this->RegisterPropertyInteger('OutdoorLinkID',   0);
 
         $this->SetVisualizationType(1);
 
@@ -79,12 +85,17 @@ class HomeScreen extends IPSModuleStrict
             }
         }
 
-        foreach (['AussenTempID', 'AussenTempMinID', 'AussenTempMaxID', 'AussenHumID'] as $key) {
+        foreach (['AussenTempID', 'AussenTempMinID', 'AussenTempMaxID', 'AussenHumID',
+                  'WindRichtungID', 'WindBoenID', 'RegenRateID', 'RegenMenge24ID', 'WetterwarnungID'] as $key) {
             $id = (int)$this->ReadPropertyInteger($key);
             if ($id > 0 && IPS_VariableExists($id)) {
                 $varIDs[] = $id;
                 $this->RegisterReference($id);
             }
+        }
+        $outdoorLinkID = (int)$this->ReadPropertyInteger('OutdoorLinkID');
+        if ($outdoorLinkID > 0) {
+            $this->RegisterReference($outdoorLinkID);
         }
 
         foreach (['Fahrzeuge', 'EnergieKacheln', 'KlimaGeraete', 'Bewaesserung', 'Lueftungsanlagen', 'Waermepumpen'] as $listKey) {
@@ -251,6 +262,16 @@ class HomeScreen extends IPSModuleStrict
   .grp-ok{color:#4caf50;font-size:0.80em;font-weight:600;}
   .empty{color:var(--text-muted);padding:10px;font-size:0.9em;}
   .footer{margin-top:8px;font-size:0.67em;color:var(--footer);text-align:right;}
+  .out-bar.clickable{cursor:pointer;}.out-bar.clickable:hover{filter:brightness(0.96);}
+  .out-warn{display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:3px;font-size:0.75em;font-weight:600;}
+  .out-warn-1{background:#f9a825;color:#333;}
+  .out-warn-2{background:#e65c00;color:#fff;}
+  .out-warn-3{background:#c62828;color:#fff;}
+  .out-warn-4{background:#4a0000;color:#fff;}
+  .out-warn-10{background:#e91e63;color:#fff;}
+  .out-warn-11{background:#7b1fa2;color:#fff;}
+  .out-row2{display:flex;align-items:center;flex-wrap:wrap;width:100%;margin-top:5px;padding-top:5px;border-top:1px solid var(--div-clr);}
+  .out-seg2{display:flex;align-items:center;gap:4px;font-size:0.80em;color:var(--text-muted);padding:0 10px 0 0;white-space:nowrap;}
 </style>
 <div id="cis-content">{$content}</div>
 <div id="cis-footer" class="footer">{$safeFooter}</div>
@@ -303,6 +324,12 @@ HTML;
                         ['type' => 'SelectVariable', 'name' => 'AussenHumID',     'caption' => 'Außenluftfeuchtigkeit (optional)'],
                         ['type' => 'SelectVariable', 'name' => 'AussenTempMinID', 'caption' => 'Tages-Tiefstwert (optional)'],
                         ['type' => 'SelectVariable', 'name' => 'AussenTempMaxID', 'caption' => 'Tages-Höchstwert (optional)'],
+                        ['type' => 'SelectVariable', 'name' => 'WindRichtungID',  'caption' => 'Windrichtung (optional)'],
+                        ['type' => 'SelectVariable', 'name' => 'WindBoenID',      'caption' => 'Windböen km/h (optional)'],
+                        ['type' => 'SelectVariable', 'name' => 'RegenRateID',     'caption' => 'Regenrate mm/h (optional)'],
+                        ['type' => 'SelectVariable', 'name' => 'RegenMenge24ID',  'caption' => 'Regenmenge 24h mm (optional)'],
+                        ['type' => 'SelectVariable', 'name' => 'WetterwarnungID', 'caption' => 'Wetterwarnung (Integer 0–13, optional)'],
+                        ['type' => 'SelectObject',   'name' => 'OutdoorLinkID',   'caption' => 'Navigation (Klick, optional)'],
                     ],
                 ],
                 [
@@ -618,10 +645,16 @@ HTML;
 
     private function BuildOutdoorBar(): string
     {
-        $tempID    = (int)$this->ReadPropertyInteger('AussenTempID');
-        $tempMinID = (int)$this->ReadPropertyInteger('AussenTempMinID');
-        $tempMaxID = (int)$this->ReadPropertyInteger('AussenTempMaxID');
-        $humID     = (int)$this->ReadPropertyInteger('AussenHumID');
+        $tempID        = (int)$this->ReadPropertyInteger('AussenTempID');
+        $tempMinID     = (int)$this->ReadPropertyInteger('AussenTempMinID');
+        $tempMaxID     = (int)$this->ReadPropertyInteger('AussenTempMaxID');
+        $humID         = (int)$this->ReadPropertyInteger('AussenHumID');
+        $windRichtID   = (int)$this->ReadPropertyInteger('WindRichtungID');
+        $windBoenID    = (int)$this->ReadPropertyInteger('WindBoenID');
+        $regenRateID   = (int)$this->ReadPropertyInteger('RegenRateID');
+        $regen24ID     = (int)$this->ReadPropertyInteger('RegenMenge24ID');
+        $warnID        = (int)$this->ReadPropertyInteger('WetterwarnungID');
+        $linkID        = (int)$this->ReadPropertyInteger('OutdoorLinkID');
 
         if ($tempID === 0 || !IPS_VariableExists($tempID)) {
             return '';
@@ -661,7 +694,31 @@ HTML;
             $maxStr = str_replace('.', ',', (string)round((float)GetValue($tempMaxID), 1)) . '°';
         }
 
-        $html  = "<div class='out-bar {$barTheme}'>";
+        // Wetterwarnung
+        $warnLevel = 0;
+        $warnHtml  = '';
+        if ($warnID > 0 && IPS_VariableExists($warnID)) {
+            $warnLevel = (int)GetValue($warnID);
+            if ($warnLevel > 0) {
+                $warnText = htmlspecialchars(GetValueFormatted($warnID));
+                $warnCls  = match(true) {
+                    $warnLevel === 1               => 'out-warn-1',
+                    $warnLevel === 2               => 'out-warn-2',
+                    $warnLevel === 3               => 'out-warn-3',
+                    $warnLevel >= 4 && $warnLevel < 10 => 'out-warn-4',
+                    $warnLevel === 10              => 'out-warn-10',
+                    $warnLevel >= 11               => 'out-warn-11',
+                    default                        => 'out-warn-1',
+                };
+                $warnHtml = "<div class='out-seg'><span class='out-warn {$warnCls}'><i class='fa-solid fa-triangle-exclamation'></i> {$warnText}</span></div>";
+            }
+        }
+
+        // Klick / Navigation
+        $clickAttr = $linkID > 0 ? " onclick='openObject({$linkID})'" : '';
+        $clickCls  = $linkID > 0 ? ' clickable' : '';
+
+        $html  = "<div class='out-bar {$barTheme}{$clickCls}'{$clickAttr}>";
         $html .= "<span class='out-icon'>{$icon}</span>";
         $html .= "<div class='out-main'>";
         $html .= "<span class='out-label'>Außen</span>";
@@ -679,6 +736,25 @@ HTML;
         }
         if ($dewPoint !== '') {
             $html .= "<div class='out-seg'><span class='out-dew'>{$dewPoint}</span></div>";
+        }
+        $html .= $warnHtml;
+
+        // Zweite Zeile: Wind & Regen
+        $row2 = '';
+        if ($windRichtID > 0 && IPS_VariableExists($windRichtID)) {
+            $row2 .= "<span class='out-seg2'><i class='fa-solid fa-compass ico-muted'></i> " . htmlspecialchars(GetValueFormatted($windRichtID)) . "</span>";
+        }
+        if ($windBoenID > 0 && IPS_VariableExists($windBoenID)) {
+            $row2 .= "<span class='out-seg2'><i class='fa-solid fa-wind ico-muted'></i> " . htmlspecialchars(GetValueFormatted($windBoenID)) . "</span>";
+        }
+        if ($regenRateID > 0 && IPS_VariableExists($regenRateID)) {
+            $row2 .= "<span class='out-seg2'><i class='fa-solid fa-cloud-rain ico-muted'></i> " . htmlspecialchars(GetValueFormatted($regenRateID)) . "</span>";
+        }
+        if ($regen24ID > 0 && IPS_VariableExists($regen24ID)) {
+            $row2 .= "<span class='out-seg2'><i class='fa-solid fa-cloud-showers-heavy ico-muted'></i> 24h: " . htmlspecialchars(GetValueFormatted($regen24ID)) . "</span>";
+        }
+        if ($row2 !== '') {
+            $html .= "<div class='out-row2'>{$row2}</div>";
         }
 
         $html .= "</div>";
