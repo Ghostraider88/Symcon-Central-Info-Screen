@@ -105,7 +105,7 @@ class HomeScreen extends IPSModuleStrict
                 if ($linkID > 0) {
                     $this->RegisterReference($linkID);
                 }
-                foreach (['SoCID', 'RangeID', 'ChargingID', 'ChargeMinID', 'StatusID',
+                foreach (['SoCID', 'RangeID', 'ChargingID', 'ChargeMinID', 'ChargePowerID', 'StatusID',
                           'SolarID', 'VerbrauchID', 'NetzID', 'BatterieID',
                           'TempID', 'SollTempID', 'ModusID', 'VentilID',
                           'AktivID', 'NextStartID', 'LaufzeitID', 'BodenID', 'BedarfID', 'TagesRestID',
@@ -447,8 +447,9 @@ HTML;
                             ['caption' => 'Batteriestand%', 'name' => 'SoCID',       'width' => '120px', 'add' => 0,           'edit' => ['type' => 'SelectVariable']],
                             ['caption' => 'Reichweite (km)','name' => 'RangeID',     'width' => '120px', 'add' => 0,           'edit' => ['type' => 'SelectVariable']],
                             ['caption' => 'Status (Text)',  'name' => 'StatusID',    'width' => '120px', 'add' => 0,           'edit' => ['type' => 'SelectVariable']],
-                            ['caption' => 'Lädt (Bool)',    'name' => 'ChargingID',  'width' => '110px', 'add' => 0,           'edit' => ['type' => 'SelectVariable']],
-                            ['caption' => 'Restladezeit min','name'=> 'ChargeMinID', 'width' => '120px', 'add' => 0,           'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Lädt (Bool)',       'name' => 'ChargingID',    'width' => '110px', 'add' => 0, 'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Restladezeit (Sek)','name'=> 'ChargeMinID',  'width' => '130px', 'add' => 0, 'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Ladeleistung (W)',  'name'=> 'ChargePowerID','width' => '130px', 'add' => 0, 'edit' => ['type' => 'SelectVariable']],
                         ],
                     ]],
                 ],
@@ -1180,12 +1181,22 @@ HTML;
         $isCharging = $chargingID > 0 && IPS_VariableExists($chargingID)
             && (bool)GetValue($chargingID);
 
-        // Restladezeit
+        // Restladezeit (Wert in Sekunden)
         $chargeMin   = '';
         $chargeMinID = (int)($item['ChargeMinID'] ?? 0);
         if ($isCharging && $chargeMinID > 0 && IPS_VariableExists($chargeMinID)) {
-            $min       = (int)GetValue($chargeMinID);
-            $chargeMin = ($min >= 60 ? (floor($min / 60) . 'h ') : '') . ($min % 60) . 'min';
+            $sec       = (int)GetValue($chargeMinID);
+            $min       = (int)round($sec / 60);
+            $chargeMin = ($min >= 60 ? (int)floor($min / 60) . 'h ' : '') . ($min % 60) . 'min';
+        }
+
+        // Ladeleistung kW
+        $chargePowerStr  = '';
+        $chargePowerID   = (int)($item['ChargePowerID'] ?? 0);
+        if ($isCharging && $chargePowerID > 0 && IPS_VariableExists($chargePowerID)) {
+            $watts          = (float)GetValue($chargePowerID);
+            $kw             = round($watts / 1000, 1);
+            $chargePowerStr = str_replace('.', ',', (string)$kw) . ' kW';
         }
 
         // Status
@@ -1216,7 +1227,8 @@ HTML;
             $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-car ico-muted'></i></span><span>{$statusStr}</span></span></div>";
         }
         if ($isCharging) {
-            $chargeTxt = $chargeMin ?: 'Lädt…';
+            $parts     = array_filter([$chargePowerStr, $chargeMin]);
+            $chargeTxt = $parts ? implode(' · ', $parts) : 'Lädt…';
             $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-bolt ico-charging'></i></span><span>{$chargeTxt}</span></span></div>";
         }
         if ($rangeStr) {
