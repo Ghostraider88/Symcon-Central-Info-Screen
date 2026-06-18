@@ -1365,7 +1365,13 @@ HTML;
         $nextStr   = ($nextStartID > 0 && IPS_VariableExists($nextStartID)) ? htmlspecialchars(GetValueFormatted($nextStartID)) : null;
         $laufzeit  = ($laufzeitID > 0  && IPS_VariableExists($laufzeitID))  ? (int)GetValue($laufzeitID)  : null;
         $boden     = ($bodenID > 0     && IPS_VariableExists($bodenID))     ? (int)GetValue($bodenID)     : null;
-        $bedarfStr = ($bedarfID > 0    && IPS_VariableExists($bedarfID))    ? htmlspecialchars(GetValueFormatted($bedarfID))    : null;
+        if ($bedarfID > 0 && IPS_VariableExists($bedarfID)) {
+            $bedarfSec = (int)GetValue($bedarfID);
+            $bedarfMin = (int)round($bedarfSec / 60);
+            $bedarfStr = ($bedarfMin >= 60 ? (int)floor($bedarfMin / 60) . 'h ' : '') . ($bedarfMin % 60) . 'min';
+        } else {
+            $bedarfStr = null;
+        }
         $tagesRest = ($tagesRestID > 0 && IPS_VariableExists($tagesRestID)) ? (int)GetValue($tagesRestID) : null;
 
         $stateClass = $isAktiv ? ' s-active' : '';
