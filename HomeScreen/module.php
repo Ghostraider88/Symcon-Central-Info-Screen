@@ -32,6 +32,7 @@ class HomeScreen extends IPSModuleStrict
         $this->RegisterPropertyInteger('RegenRateID',     0);
         $this->RegisterPropertyInteger('RegenMenge24ID',  0);
         $this->RegisterPropertyInteger('WetterwarnungID', 0);
+        $this->RegisterPropertyInteger('UVID',           0);
         $this->RegisterPropertyInteger('OutdoorLinkID',   0);
 
         $this->SetVisualizationType(1);
@@ -86,7 +87,7 @@ class HomeScreen extends IPSModuleStrict
         }
 
         foreach (['AussenTempID', 'AussenTempMinID', 'AussenTempMaxID', 'AussenHumID',
-                  'WindRichtungID', 'WindBoenID', 'RegenRateID', 'RegenMenge24ID', 'WetterwarnungID'] as $key) {
+                  'WindRichtungID', 'WindBoenID', 'RegenRateID', 'RegenMenge24ID', 'WetterwarnungID', 'UVID'] as $key) {
             $id = (int)$this->ReadPropertyInteger($key);
             if ($id > 0 && IPS_VariableExists($id)) {
                 $varIDs[] = $id;
@@ -271,7 +272,15 @@ class HomeScreen extends IPSModuleStrict
   .out-warn-4{background:#4a0000;color:#fff;}
   .out-warn-10{background:#e91e63;color:#fff;}
   .out-warn-11{background:#7b1fa2;color:#fff;}
+  .out-warn-seg{flex-direction:column;align-items:flex-start;gap:3px;}
+  .out-uv{display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:3px;font-size:0.75em;font-weight:700;}
+  .uv-low{background:#4caf50;color:#fff;}
+  .uv-mid{background:#f9a825;color:#333;}
+  .uv-high{background:#e65c00;color:#fff;}
+  .uv-veryhigh{background:#e53935;color:#fff;}
+  .uv-extreme{background:#7b1fa2;color:#fff;}
   .out-row2{display:flex;width:100%;margin-top:5px;padding-top:5px;border-top:1px solid var(--div-clr);}
+  .out-row2 .out-seg{padding:0 4px;font-size:0.80em;}
   /* Icon-Symbole – kein externer CDN, kein Internet erforderlich */
   .fa-solid{font-style:normal;display:inline-block;line-height:1;}
   .fa-solid::before{font-family:system-ui,'Segoe UI Symbol','Apple Symbols','Noto Sans',sans-serif;}
@@ -368,6 +377,7 @@ HTML;
                         ['type' => 'SelectVariable', 'name' => 'RegenRateID',     'caption' => 'Regenrate mm/h (optional)'],
                         ['type' => 'SelectVariable', 'name' => 'RegenMenge24ID',  'caption' => 'Regenmenge 24h mm (optional)'],
                         ['type' => 'SelectVariable', 'name' => 'WetterwarnungID', 'caption' => 'Wetterwarnung (Integer 0–13, optional)'],
+                        ['type' => 'SelectVariable', 'name' => 'UVID',           'caption' => 'UV-Index (Integer 0–11+, optional)'],
                         ['type' => 'SelectObject',   'name' => 'OutdoorLinkID',   'caption' => 'Navigation (Klick, optional)'],
                     ],
                 ],
@@ -734,8 +744,8 @@ HTML;
             $maxStr = str_replace('.', ',', (string)round((float)GetValue($tempMaxID), 1)) . '°';
         }
 
-        // Wetterwarnung – immer anzeigen wenn konfiguriert
-        $warnHtml = '';
+        // Wetterwarnung
+        $warnBadge = '';
         if ($warnID > 0 && IPS_VariableExists($warnID)) {
             $warnLevel = (int)GetValue($warnID);
             $warnText  = htmlspecialchars(GetValueFormatted($warnID));
@@ -749,8 +759,30 @@ HTML;
                 $warnLevel >= 11                       => 'out-warn-11',
                 default                                => 'out-warn-0',
             };
-            $warnIcon = $warnLevel === 0 ? 'fa-shield-halved' : 'fa-triangle-exclamation';
-            $warnHtml = "<div class='out-seg'><span class='out-warn {$warnCls}'><i class='fa-solid {$warnIcon}'></i> {$warnText}</span></div>";
+            $warnIcon  = $warnLevel === 0 ? 'fa-shield-halved' : 'fa-triangle-exclamation';
+            $warnBadge = "<span class='out-warn {$warnCls}'><i class='fa-solid {$warnIcon}'></i> {$warnText}</span>";
+        }
+
+        // UV-Index
+        $uvBadge = '';
+        $uvID    = (int)$this->ReadPropertyInteger('UVID');
+        if ($uvID > 0 && IPS_VariableExists($uvID)) {
+            $uvVal   = (int)GetValue($uvID);
+            $uvCls   = match(true) {
+                $uvVal <= 2  => 'uv-low',
+                $uvVal <= 5  => 'uv-mid',
+                $uvVal <= 7  => 'uv-high',
+                $uvVal <= 10 => 'uv-veryhigh',
+                default      => 'uv-extreme',
+            };
+            $uvBadge = "<span class='out-uv {$uvCls}'>UV {$uvVal}</span>";
+        }
+
+        // Warn- + UV-Segment zusammenführen
+        $warnHtml = '';
+        if ($warnBadge !== '' || $uvBadge !== '') {
+            $segCls   = ($warnBadge !== '' && $uvBadge !== '') ? ' out-warn-seg' : '';
+            $warnHtml = "<div class='out-seg{$segCls}'>{$warnBadge}{$uvBadge}</div>";
         }
 
         // Klick / Navigation
