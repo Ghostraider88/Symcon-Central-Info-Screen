@@ -514,7 +514,7 @@ HTML;
                             ['caption' => 'Navigation',        'name' => 'LinkID',     'width' => '120px', 'add' => 0,       'edit' => ['type' => 'SelectObject']],
                             ['caption' => 'Aktiv (Bool)',      'name' => 'AktivID',    'width' => '110px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
                             ['caption' => 'Nächster Start',       'name' => 'NextStartID','width' => '120px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
-                            ['caption' => 'Restlaufzeit (min)',   'name' => 'LaufzeitID', 'width' => '130px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Restlaufzeit (Sek)',   'name' => 'LaufzeitID', 'width' => '130px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
                             ['caption' => 'Bodenfeuchte (%)',     'name' => 'BodenID',    'width' => '120px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
                             ['caption' => 'Heutiger Bedarf',      'name' => 'BedarfID',   'width' => '130px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
                             ['caption' => 'Heutige Restlaufzeit', 'name' => 'TagesRestID','width' => '140px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
@@ -1378,11 +1378,13 @@ HTML;
         $html .= "</div>";
 
         if ($isAktiv && $laufzeit !== null && $laufzeit > 0) {
-            $restStr = ($laufzeit >= 60 ? (floor($laufzeit / 60) . 'h ') : '') . ($laufzeit % 60) . 'min';
+            $restMin = (int)round($laufzeit / 60);
+            $restStr = ($restMin >= 60 ? (int)floor($restMin / 60) . 'h ' : '') . ($restMin % 60) . 'min';
             $html   .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-clock ico-active'></i></span><span>noch {$restStr}</span></span></div>";
         }
         if ($tagesRest !== null) {
-            $tagesStr = ($tagesRest >= 60 ? (floor($tagesRest / 60) . 'h ') : '') . ($tagesRest % 60) . 'min';
+            $tagesMin = (int)round($tagesRest / 60);
+            $tagesStr = ($tagesMin >= 60 ? (int)floor($tagesMin / 60) . 'h ' : '') . ($tagesMin % 60) . 'min';
             $html    .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-hourglass-half ico-muted'></i></span><span>Heute noch: {$tagesStr}</span></span></div>";
         }
         if ($bedarfStr !== null) {
