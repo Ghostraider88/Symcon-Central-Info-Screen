@@ -31,6 +31,7 @@ class HomeScreen extends IPSModuleStrict
         $this->RegisterPropertyInteger('WindBoenID',      0);
         $this->RegisterPropertyInteger('RegenRateID',     0);
         $this->RegisterPropertyInteger('RegenMenge24ID',  0);
+        $this->RegisterPropertyInteger('TaupunktID',      0);
         $this->RegisterPropertyInteger('WetterwarnungID', 0);
         $this->RegisterPropertyInteger('UVID',           0);
         $this->RegisterPropertyInteger('OutdoorLinkID',   0);
@@ -87,7 +88,7 @@ class HomeScreen extends IPSModuleStrict
         }
 
         foreach (['AussenTempID', 'AussenTempMinID', 'AussenTempMaxID', 'AussenHumID',
-                  'WindRichtungID', 'WindBoenID', 'RegenRateID', 'RegenMenge24ID', 'WetterwarnungID', 'UVID'] as $key) {
+                  'WindRichtungID', 'WindBoenID', 'RegenRateID', 'RegenMenge24ID', 'TaupunktID', 'WetterwarnungID', 'UVID'] as $key) {
             $id = (int)$this->ReadPropertyInteger($key);
             if ($id > 0 && IPS_VariableExists($id)) {
                 $varIDs[] = $id;
@@ -376,6 +377,7 @@ HTML;
                         ['type' => 'SelectVariable', 'name' => 'WindBoenID',      'caption' => 'Windböen km/h (optional)'],
                         ['type' => 'SelectVariable', 'name' => 'RegenRateID',     'caption' => 'Regenrate mm/h (optional)'],
                         ['type' => 'SelectVariable', 'name' => 'RegenMenge24ID',  'caption' => 'Regenmenge 24h mm (optional)'],
+                        ['type' => 'SelectVariable', 'name' => 'TaupunktID',      'caption' => 'Taupunkt °C (optional, sonst berechnet)'],
                         ['type' => 'SelectVariable', 'name' => 'WetterwarnungID', 'caption' => 'Wetterwarnung (Integer 0–13, optional)'],
                         ['type' => 'SelectVariable', 'name' => 'UVID',           'caption' => 'UV-Index (Integer 0–11+, optional)'],
                         ['type' => 'SelectObject',   'name' => 'OutdoorLinkID',   'caption' => 'Navigation (Klick, optional)'],
@@ -729,8 +731,12 @@ HTML;
         $trendIcon = $this->GetTempTrend($tempID);
         $comfort   = $this->OutdoorComfortLabel($temp, $hum);
 
-        $dewPoint = '';
-        if ($hum !== null && $temp > 10) {
+        $taupunktID = (int)$this->ReadPropertyInteger('TaupunktID');
+        $dewPoint   = '';
+        if ($taupunktID > 0 && IPS_VariableExists($taupunktID)) {
+            $dp       = round((float)GetValue($taupunktID), 1);
+            $dewPoint = 'Taupunkt ' . str_replace('.', ',', (string)$dp) . '°';
+        } elseif ($hum !== null && $temp > 10) {
             $dp       = round($temp - ((100 - $hum) / 5.0), 1);
             $dewPoint = 'Taupunkt ' . str_replace('.', ',', (string)$dp) . '°';
         }
