@@ -2,9 +2,9 @@
 
 Visualisierungs-Modul für **IP-Symcon**, das einen kompakten Überblick über das gesamte Smart Home als Kachel-Übersicht darstellt: Räume, E-Autos, Solar-/Energiestatus, Klima und Bewässerung – gruppiert nach Stockwerken bzw. Bereichen.
 
-[![Version](https://img.shields.io/badge/Version-1.0.0-blue)](https://github.com/Ghostraider88/Symcon-Central-Info-Screen/releases)
+[![Version](https://img.shields.io/badge/Version-1.0.2-blue)](https://github.com/Ghostraider88/Symcon-Central-Info-Screen/releases)
 [![Lizenz](https://img.shields.io/badge/Lizenz-MIT-green)](LICENSE)
-[![IP-Symcon](https://img.shields.io/badge/IP--Symcon-%E2%89%A5%208.1-orange)](https://www.symcon.de)
+[![IP-Symcon](https://img.shields.io/badge/IP--Symcon-%E2%89%A5%208.2-orange)](https://www.symcon.de)
 
 ---
 
@@ -41,9 +41,8 @@ Visualisierungs-Modul für **IP-Symcon**, das einen kompakten Überblick über d
 
 | Anforderung | Details |
 |---|---|
-| IP-Symcon | Version ≥ 8.1 |
+| IP-Symcon | Version ≥ 8.2 |
 | Archive-Control | Optional – für den Temperatur-Trend-Pfeil (Variablen müssen aufgezeichnet sein) |
-| Internetzugang | Für Font Awesome 6 Icons (CDN) |
 
 ---
 
@@ -62,7 +61,7 @@ Visualisierungs-Modul für **IP-Symcon**, das einen kompakten Überblick über d
 
 1. Dieses Repository als ZIP herunterladen und in das Verzeichnis `modules/` von IP-Symcon entpacken
 2. IP-Symcon-Konsole neu öffnen oder Modul-Manager aktualisieren
-3. Über **Instanz hinzufügen** → Suche nach „HomeScreen" eine neue Instanz anlegen
+3. Über **Instanz hinzufügen** → Suche nach „HomeScreen“ eine neue Instanz anlegen
 
 ---
 
@@ -81,7 +80,7 @@ Die Konfiguration erfolgt in der Instanz über getrennte **Expansion-Panels** pr
 
 ### 4.2 Bereiche / Stockwerke
 
-Definiert die Gruppierung der Kacheln und liefert optionale Aggregat-Variablen für den Bereich-Header (z. B. „3 Lichter an · 2 Fenster offen").
+Definiert die Gruppierung der Kacheln und liefert optionale Aggregat-Variablen für den Bereich-Header (z. B. „3 Lichter an · 2 Fenster offen“).
 
 ### 4.3 Räume
 
@@ -109,7 +108,7 @@ Jeder Typ hat eine eigene Liste mit typspezifischen Variablen — siehe [Abschni
 | Batteriestand % | SoC-Variable (0–100) · Fortschrittsbalken + Farbe (grün/orange/rot) |
 | Reichweite | Variable in km |
 | Lädt (Bool) | Karten-Rand wird blau |
-| Restladezeit (min) | Wird als „Xh Ymin" dargestellt |
+| Restladezeit (min) | Wird als „Xh Ymin“ dargestellt |
 | Status (Text) | Beliebige Statusvariable via `GetValueFormatted` |
 
 ### Energie / Solar
@@ -126,8 +125,8 @@ Jeder Typ hat eine eigene Liste mit typspezifischen Variablen — siehe [Abschni
 | Feld | Beschreibung |
 |---|---|
 | Ist-Temperatur | Erscheint im Karten-Header mit Trend-Pfeil |
-| Soll-Temperatur | Darunter als „Soll: X°" |
-| Modus | Text via `GetValueFormatted` (z. B. „Heizen", „Kühlen") |
+| Soll-Temperatur | Darunter als „Soll: X°“ |
+| Modus | Text via `GetValueFormatted` (z. B. „Heizen“, „Kühlen“) |
 | Ventil/Gebläse % | Ab 60 % orange hervorgehoben |
 
 ### Bewässerung
@@ -135,7 +134,7 @@ Jeder Typ hat eine eigene Liste mit typspezifischen Variablen — siehe [Abschni
 | Feld | Beschreibung |
 |---|---|
 | Aktiv (Bool) | Karten-Rand wird grün |
-| Restlaufzeit (min) | Wird als „Xh Ymin" dargestellt |
+| Restlaufzeit (min) | Wird als „Xh Ymin“ dargestellt |
 | Nächster Start | Text oder Timestamp via `GetValueFormatted` |
 | Bodenfeuchte (%) | Unter 30 % orange hervorgehoben |
 

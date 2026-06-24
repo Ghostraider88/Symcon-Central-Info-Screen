@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 class HomeScreen extends IPSModuleStrict
 {
-    private const MODULE_VERSION = '1.0.0';
+    private const MODULE_VERSION = '1.0.2';
 
     // -------------------------------------------------------------------------
     // Lifecycle
@@ -27,6 +27,14 @@ class HomeScreen extends IPSModuleStrict
         $this->RegisterPropertyInteger('AussenTempMinID', 0);
         $this->RegisterPropertyInteger('AussenTempMaxID', 0);
         $this->RegisterPropertyInteger('AussenHumID',     0);
+        $this->RegisterPropertyInteger('WindRichtungID',  0);
+        $this->RegisterPropertyInteger('WindBoenID',      0);
+        $this->RegisterPropertyInteger('RegenRateID',     0);
+        $this->RegisterPropertyInteger('RegenMenge24ID',  0);
+        $this->RegisterPropertyInteger('TaupunktID',      0);
+        $this->RegisterPropertyInteger('WetterwarnungID', 0);
+        $this->RegisterPropertyInteger('UVID',           0);
+        $this->RegisterPropertyInteger('OutdoorLinkID',   0);
 
         $this->SetVisualizationType(1);
 
@@ -79,12 +87,17 @@ class HomeScreen extends IPSModuleStrict
             }
         }
 
-        foreach (['AussenTempID', 'AussenTempMinID', 'AussenTempMaxID', 'AussenHumID'] as $key) {
+        foreach (['AussenTempID', 'AussenTempMinID', 'AussenTempMaxID', 'AussenHumID',
+                  'WindRichtungID', 'WindBoenID', 'RegenRateID', 'RegenMenge24ID', 'TaupunktID', 'WetterwarnungID', 'UVID'] as $key) {
             $id = (int)$this->ReadPropertyInteger($key);
             if ($id > 0 && IPS_VariableExists($id)) {
                 $varIDs[] = $id;
                 $this->RegisterReference($id);
             }
+        }
+        $outdoorLinkID = (int)$this->ReadPropertyInteger('OutdoorLinkID');
+        if ($outdoorLinkID > 0) {
+            $this->RegisterReference($outdoorLinkID);
         }
 
         foreach (['Fahrzeuge', 'EnergieKacheln', 'KlimaGeraete', 'Bewaesserung', 'Lueftungsanlagen', 'Waermepumpen'] as $listKey) {
@@ -94,10 +107,10 @@ class HomeScreen extends IPSModuleStrict
                 if ($linkID > 0) {
                     $this->RegisterReference($linkID);
                 }
-                foreach (['SoCID', 'RangeID', 'ChargingID', 'ChargeMinID', 'StatusID',
+                foreach (['SoCID', 'RangeID', 'ChargingID', 'ChargeMinID', 'ChargePowerID', 'StatusID',
                           'SolarID', 'VerbrauchID', 'NetzID', 'BatterieID',
                           'TempID', 'SollTempID', 'ModusID', 'VentilID',
-                          'AktivID', 'NextStartID', 'LaufzeitID', 'BodenID',
+                          'AktivID', 'NextStartID', 'LaufzeitID', 'BodenID', 'BedarfID', 'TagesRestID',
                           'LuefterID', 'LueftModusID', 'FrischluftID', 'ZuluftID', 'BetriebsartID',
                           'TempMitteID', 'TempObenID', 'KompressorID', 'HeizstabID'] as $key) {
                     $id = (int)($item[$key] ?? 0);
@@ -162,7 +175,7 @@ class HomeScreen extends IPSModuleStrict
 
         return <<<HTML
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous">
+<script src="/icons.js"></script>
 <style>
   /* Poppins – Symcon Tile Assets */
   @font-face{font-family:'Poppins';src:url('/tile/assets/google_fonts/Poppins-Regular.ttf') format('truetype');font-weight:400;font-style:normal;}
@@ -235,7 +248,7 @@ class HomeScreen extends IPSModuleStrict
   .out-comfort{font-size:1em;}
   .out-range{display:flex;gap:6px;}
   .out-lo{color:#5b9bd5;font-weight:600;}.out-hi{color:#e53935;font-weight:600;}
-  /* ── Mobile: Wetter-Bar 2-zeilig ──────────────────────────── */
+  /* ── Mobile: Wetter-Bar 2-zeilig ────────────────────────── */
   @media(max-width:520px){
     .out-bar{padding:6px 10px;}
     .out-icon{font-size:1.25em;margin-right:7px;}
@@ -244,13 +257,70 @@ class HomeScreen extends IPSModuleStrict
     .out-seg{flex:0 0 auto;border-right:none;padding:2px 8px 0;}
     .out-seg:not(:last-child){border-right:1px solid var(--div-clr);}
   }
-  /* ── Status & Footer ─────────────────────────────────────── */
+  /* ── Status & Footer ─────────────────────────────────────────────── */
   .stat-bar{display:flex;gap:10px;align-items:center;padding:4px 2px;margin-bottom:6px;font-size:0.83em;flex-wrap:wrap;}
   .stat-ok{color:#4caf50;font-weight:600;}
   .stat-al{display:flex;align-items:center;gap:3px;}
   .grp-ok{color:#4caf50;font-size:0.80em;font-weight:600;}
   .empty{color:var(--text-muted);padding:10px;font-size:0.9em;}
   .footer{margin-top:8px;font-size:0.67em;color:var(--footer);text-align:right;}
+  .out-bar.clickable{cursor:pointer;}.out-bar.clickable:hover{filter:brightness(0.96);}
+  .out-warn{display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:3px;font-size:0.75em;font-weight:600;}
+  .out-warn-0{background:#4caf50;color:#fff;}
+  .out-warn-1{background:#f9a825;color:#333;}
+  .out-warn-2{background:#e65c00;color:#fff;}
+  .out-warn-3{background:#c62828;color:#fff;}
+  .out-warn-4{background:#4a0000;color:#fff;}
+  .out-warn-10{background:#e91e63;color:#fff;}
+  .out-warn-11{background:#7b1fa2;color:#fff;}
+  .out-warn-seg{flex-direction:column;align-items:flex-start;gap:3px;}
+  .out-uv{display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:3px;font-size:0.75em;font-weight:700;}
+  .uv-low{background:#4caf50;color:#fff;}
+  .uv-mid{background:#f9a825;color:#333;}
+  .uv-high{background:#e65c00;color:#fff;}
+  .uv-veryhigh{background:#e53935;color:#fff;}
+  .uv-extreme{background:#7b1fa2;color:#fff;}
+  .out-row2{display:flex;width:100%;margin-top:5px;padding-top:5px;border-top:1px solid var(--div-clr);}
+  .out-row2 .out-seg{padding:0 4px;font-size:0.80em;}
+  /* Icon-Symbole – kein externer CDN, kein Internet erforderlich */
+  .fa-solid{font-style:normal;display:inline-block;line-height:1;}
+  .fa-solid::before{font-family:system-ui,'Segoe UI Symbol','Apple Symbols','Noto Sans',sans-serif;}
+  .fa-check::before{content:"✓";}
+  .fa-lightbulb::before{content:"◉";}
+  .fa-door-open::before{content:"⊏";}
+  .fa-door-closed::before{content:"⊐";}
+  .fa-temperature-half::before{content:"▾";}
+  .fa-temperature-high::before{content:"▴";}
+  .fa-wind::before{content:"≈";}
+  .fa-bars::before{content:"≡";}
+  .fa-plug::before{content:"⊓";}
+  .fa-car::before{content:"▶";}
+  .fa-bolt::before{content:"↯";}
+  .fa-road::before{content:"↕";}
+  .fa-sun::before{content:"✦";}
+  .fa-house::before{content:"⌂";}
+  .fa-plug-circle-bolt::before{content:"⊛";}
+  .fa-battery-half::before{content:"▬";}
+  .fa-sliders::before{content:"≣";}
+  .fa-circle-half-stroke::before{content:"◑";}
+  .fa-fan::before{content:"✧";}
+  .fa-droplet::before{content:"◉";}
+  .fa-clock::before{content:"◔";}
+  .fa-hourglass-half::before{content:"▽";}
+  .fa-chart-simple::before{content:"▲";}
+  .fa-calendar::before{content:"⊟";}
+  .fa-seedling::before{content:"✿";}
+  .fa-arrow-right-to-bracket::before{content:"→";}
+  .fa-arrow-right-from-bracket::before{content:"←";}
+  .fa-gear::before{content:"⚙";font-variant-emoji:text;}
+  .fa-compass::before{content:"⊕";}
+  .fa-cloud-rain::before{content:"≈";}
+  .fa-cloud-showers-heavy::before{content:"≋";}
+  .fa-shield-halved::before{content:"◈";}
+  .fa-triangle-exclamation::before{content:"△";}
+  .fa-arrow-right::before{content:"→";}
+  .fa-arrow-trend-up::before{content:"↗";}
+  .fa-arrow-trend-down::before{content:"↘";}
 </style>
 <div id="cis-content">{$content}</div>
 <div id="cis-footer" class="footer">{$safeFooter}</div>
@@ -303,6 +373,14 @@ HTML;
                         ['type' => 'SelectVariable', 'name' => 'AussenHumID',     'caption' => 'Außenluftfeuchtigkeit (optional)'],
                         ['type' => 'SelectVariable', 'name' => 'AussenTempMinID', 'caption' => 'Tages-Tiefstwert (optional)'],
                         ['type' => 'SelectVariable', 'name' => 'AussenTempMaxID', 'caption' => 'Tages-Höchstwert (optional)'],
+                        ['type' => 'SelectVariable', 'name' => 'WindRichtungID',  'caption' => 'Windrichtung (optional)'],
+                        ['type' => 'SelectVariable', 'name' => 'WindBoenID',      'caption' => 'Windböen km/h (optional)'],
+                        ['type' => 'SelectVariable', 'name' => 'RegenRateID',     'caption' => 'Regenrate mm/h (optional)'],
+                        ['type' => 'SelectVariable', 'name' => 'RegenMenge24ID',  'caption' => 'Regenmenge 24h mm (optional)'],
+                        ['type' => 'SelectVariable', 'name' => 'TaupunktID',      'caption' => 'Taupunkt °C (optional, sonst berechnet)'],
+                        ['type' => 'SelectVariable', 'name' => 'WetterwarnungID', 'caption' => 'Wetterwarnung (Integer 0–13, optional)'],
+                        ['type' => 'SelectVariable', 'name' => 'UVID',           'caption' => 'UV-Index (Integer 0–11+, optional)'],
+                        ['type' => 'SelectObject',   'name' => 'OutdoorLinkID',   'caption' => 'Navigation (Klick, optional)'],
                     ],
                 ],
                 [
@@ -381,8 +459,9 @@ HTML;
                             ['caption' => 'Batteriestand%', 'name' => 'SoCID',       'width' => '120px', 'add' => 0,           'edit' => ['type' => 'SelectVariable']],
                             ['caption' => 'Reichweite (km)','name' => 'RangeID',     'width' => '120px', 'add' => 0,           'edit' => ['type' => 'SelectVariable']],
                             ['caption' => 'Status (Text)',  'name' => 'StatusID',    'width' => '120px', 'add' => 0,           'edit' => ['type' => 'SelectVariable']],
-                            ['caption' => 'Lädt (Bool)',    'name' => 'ChargingID',  'width' => '110px', 'add' => 0,           'edit' => ['type' => 'SelectVariable']],
-                            ['caption' => 'Restladezeit min','name'=> 'ChargeMinID', 'width' => '120px', 'add' => 0,           'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Lädt (Bool)',       'name' => 'ChargingID',    'width' => '110px', 'add' => 0, 'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Restladezeit (Sek)','name'=> 'ChargeMinID',  'width' => '130px', 'add' => 0, 'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Ladeleistung (W)',  'name'=> 'ChargePowerID','width' => '130px', 'add' => 0, 'edit' => ['type' => 'SelectVariable']],
                         ],
                     ]],
                 ],
@@ -426,7 +505,7 @@ HTML;
                             ['caption' => 'Ist-Temp (°C)',   'name' => 'TempID',    'width' => '110px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
                             ['caption' => 'Soll-Temp (°C)',  'name' => 'SollTempID','width' => '110px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
                             ['caption' => 'Modus (Text)',    'name' => 'ModusID',   'width' => '110px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
-                            ['caption' => 'Ventil/Gebläse%','name' => 'VentilID',  'width' => '110px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Lüftermodus (String)', 'name' => 'VentilID', 'width' => '110px', 'add' => 0, 'edit' => ['type' => 'SelectVariable']],
                         ],
                     ]],
                 ],
@@ -446,9 +525,11 @@ HTML;
                             ['caption' => 'Name',              'name' => 'Name',       'width' => '110px', 'add' => 'Zone',  'edit' => ['type' => 'ValidationTextBox']],
                             ['caption' => 'Navigation',        'name' => 'LinkID',     'width' => '120px', 'add' => 0,       'edit' => ['type' => 'SelectObject']],
                             ['caption' => 'Aktiv (Bool)',      'name' => 'AktivID',    'width' => '110px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
-                            ['caption' => 'Nächster Start',    'name' => 'NextStartID','width' => '120px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
-                            ['caption' => 'Restlaufzeit (min)','name' => 'LaufzeitID', 'width' => '130px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
-                            ['caption' => 'Bodenfeuchte (%)',  'name' => 'BodenID',    'width' => '120px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Nächster Start',       'name' => 'NextStartID','width' => '120px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Restlaufzeit (Sek)',   'name' => 'LaufzeitID', 'width' => '130px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Bodenfeuchte (%)',     'name' => 'BodenID',    'width' => '120px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Heutiger Bedarf',      'name' => 'BedarfID',   'width' => '130px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Heutige Restlaufzeit', 'name' => 'TagesRestID','width' => '140px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
                         ],
                     ]],
                 ],
@@ -616,10 +697,16 @@ HTML;
 
     private function BuildOutdoorBar(): string
     {
-        $tempID    = (int)$this->ReadPropertyInteger('AussenTempID');
-        $tempMinID = (int)$this->ReadPropertyInteger('AussenTempMinID');
-        $tempMaxID = (int)$this->ReadPropertyInteger('AussenTempMaxID');
-        $humID     = (int)$this->ReadPropertyInteger('AussenHumID');
+        $tempID        = (int)$this->ReadPropertyInteger('AussenTempID');
+        $tempMinID     = (int)$this->ReadPropertyInteger('AussenTempMinID');
+        $tempMaxID     = (int)$this->ReadPropertyInteger('AussenTempMaxID');
+        $humID         = (int)$this->ReadPropertyInteger('AussenHumID');
+        $windRichtID   = (int)$this->ReadPropertyInteger('WindRichtungID');
+        $windBoenID    = (int)$this->ReadPropertyInteger('WindBoenID');
+        $regenRateID   = (int)$this->ReadPropertyInteger('RegenRateID');
+        $regen24ID     = (int)$this->ReadPropertyInteger('RegenMenge24ID');
+        $warnID        = (int)$this->ReadPropertyInteger('WetterwarnungID');
+        $linkID        = (int)$this->ReadPropertyInteger('OutdoorLinkID');
 
         if ($tempID === 0 || !IPS_VariableExists($tempID)) {
             return '';
@@ -644,8 +731,12 @@ HTML;
         $trendIcon = $this->GetTempTrend($tempID);
         $comfort   = $this->OutdoorComfortLabel($temp, $hum);
 
-        $dewPoint = '';
-        if ($hum !== null && $temp > 10) {
+        $taupunktID = (int)$this->ReadPropertyInteger('TaupunktID');
+        $dewPoint   = '';
+        if ($taupunktID > 0 && IPS_VariableExists($taupunktID)) {
+            $dp       = round((float)GetValue($taupunktID), 1);
+            $dewPoint = 'Taupunkt ' . str_replace('.', ',', (string)$dp) . '°';
+        } elseif ($hum !== null && $temp > 10) {
             $dp       = round($temp - ((100 - $hum) / 5.0), 1);
             $dewPoint = 'Taupunkt ' . str_replace('.', ',', (string)$dp) . '°';
         }
@@ -659,7 +750,52 @@ HTML;
             $maxStr = str_replace('.', ',', (string)round((float)GetValue($tempMaxID), 1)) . '°';
         }
 
-        $html  = "<div class='out-bar {$barTheme}'>";
+        // Wetterwarnung
+        $warnBadge = '';
+        if ($warnID > 0 && IPS_VariableExists($warnID)) {
+            $warnLevel = (int)GetValue($warnID);
+            $warnText  = htmlspecialchars(GetValueFormatted($warnID));
+            $warnCls   = match(true) {
+                $warnLevel === 0                       => 'out-warn-0',
+                $warnLevel === 1                       => 'out-warn-1',
+                $warnLevel === 2                       => 'out-warn-2',
+                $warnLevel === 3                       => 'out-warn-3',
+                $warnLevel >= 4 && $warnLevel < 10     => 'out-warn-4',
+                $warnLevel === 10                      => 'out-warn-10',
+                $warnLevel >= 11                       => 'out-warn-11',
+                default                                => 'out-warn-0',
+            };
+            $warnIcon  = $warnLevel === 0 ? 'fa-shield-halved' : 'fa-triangle-exclamation';
+            $warnBadge = "<span class='out-warn {$warnCls}'><i class='fa-solid {$warnIcon}'></i> {$warnText}</span>";
+        }
+
+        // UV-Index
+        $uvBadge = '';
+        $uvID    = (int)$this->ReadPropertyInteger('UVID');
+        if ($uvID > 0 && IPS_VariableExists($uvID)) {
+            $uvVal   = (int)GetValue($uvID);
+            $uvCls   = match(true) {
+                $uvVal <= 2  => 'uv-low',
+                $uvVal <= 5  => 'uv-mid',
+                $uvVal <= 7  => 'uv-high',
+                $uvVal <= 10 => 'uv-veryhigh',
+                default      => 'uv-extreme',
+            };
+            $uvBadge = "<span class='out-uv {$uvCls}'>UV {$uvVal}</span>";
+        }
+
+        // Warn- + UV-Segment zusammenführen
+        $warnHtml = '';
+        if ($warnBadge !== '' || $uvBadge !== '') {
+            $segCls   = ($warnBadge !== '' && $uvBadge !== '') ? ' out-warn-seg' : '';
+            $warnHtml = "<div class='out-seg{$segCls}'>{$warnBadge}{$uvBadge}</div>";
+        }
+
+        // Klick / Navigation
+        $clickAttr = $linkID > 0 ? " onclick='openObject({$linkID})'" : '';
+        $clickCls  = $linkID > 0 ? ' clickable' : '';
+
+        $html  = "<div class='out-bar {$barTheme}{$clickCls}'{$clickAttr}>";
         $html .= "<span class='out-icon'>{$icon}</span>";
         $html .= "<div class='out-main'>";
         $html .= "<span class='out-label'>Außen</span>";
@@ -677,6 +813,25 @@ HTML;
         }
         if ($dewPoint !== '') {
             $html .= "<div class='out-seg'><span class='out-dew'>{$dewPoint}</span></div>";
+        }
+        $html .= $warnHtml;
+
+        // Zweite Zeile: Wind & Regen – gleiche Segment-Optik wie Zeile 1
+        $row2 = '';
+        if ($windRichtID > 0 && IPS_VariableExists($windRichtID)) {
+            $row2 .= "<div class='out-seg'><i class='fa-solid fa-compass' style='margin-right:3px'></i>" . htmlspecialchars(GetValueFormatted($windRichtID)) . "</div>";
+        }
+        if ($windBoenID > 0 && IPS_VariableExists($windBoenID)) {
+            $row2 .= "<div class='out-seg'><i class='fa-solid fa-wind' style='margin-right:3px'></i>" . htmlspecialchars(GetValueFormatted($windBoenID)) . "</div>";
+        }
+        if ($regenRateID > 0 && IPS_VariableExists($regenRateID)) {
+            $row2 .= "<div class='out-seg'><i class='fa-solid fa-cloud-rain' style='margin-right:3px'></i>" . htmlspecialchars(GetValueFormatted($regenRateID)) . "</div>";
+        }
+        if ($regen24ID > 0 && IPS_VariableExists($regen24ID)) {
+            $row2 .= "<div class='out-seg'><i class='fa-solid fa-cloud-showers-heavy' style='margin-right:3px'></i>24h: " . htmlspecialchars(GetValueFormatted($regen24ID)) . "</div>";
+        }
+        if ($row2 !== '') {
+            $html .= "<div class='out-row2'>{$row2}</div>";
         }
 
         $html .= "</div>";
@@ -844,10 +999,11 @@ HTML;
         }
 
         $linkID      = (int)(($def ?? [])['LinkID'] ?? 0);
-        $clickable   = $linkID > 0 ? " clickable' onclick='openObject({$linkID})" : '';
+        $clickCls    = $linkID > 0 ? ' clickable' : '';
+        $clickAttr   = $linkID > 0 ? " onclick='openObject({$linkID})'" : '';
         $displayName = $name !== '' ? htmlspecialchars($name) : 'Ohne Bereich';
 
-        return "<div class='grp-hdr{$clickable}'>"
+        return "<div class='grp-hdr{$clickCls}'{$clickAttr}>"
             . "<span class='grp-name'>{$displayName}</span>"
             . ($stats !== '' ? "<span class='grp-chips'>{$stats}</span>" : '')
             . "</div>";
@@ -867,7 +1023,7 @@ HTML;
         };
     }
 
-    // ── Raum-Kachel ──────────────────────────────────────────────────────────
+    // ── Raum-Kachel ────────────────────────────────────────────────────────────────────
 
     private function BuildCard_Raum(array $raum): string
     {
@@ -997,11 +1153,13 @@ HTML;
         }
 
         $now    = time();
-        $values = AC_GetLoggedValues($archiveID, $varID, $now - 45 * 60, $now, 0);
+        $values = AC_GetLoggedValues($archiveID, $varID, $now - 2 * 3600, $now, 0);
+        $thresh = 0.8;
 
-        // Sensor loggt nur bei Änderung → 45-Min-Fenster leer → 4-Std.-Fenster probieren
+        // Sensor loggt nur bei Änderung → 2-Std.-Fenster zu leer → 6-Std.-Fenster probieren
         if (!is_array($values) || count($values) < 2) {
-            $values = AC_GetLoggedValues($archiveID, $varID, $now - 4 * 3600, $now, 0);
+            $values = AC_GetLoggedValues($archiveID, $varID, $now - 6 * 3600, $now, 0);
+            $thresh = 2.0;
         }
 
         // Immer noch < 2 Werte → Temperatur ist konstant stabil
@@ -1014,10 +1172,10 @@ HTML;
         $oldest = (float)$values[count($values) - 1]['Value'];
         $delta  = $newest - $oldest;
 
-        if ($delta >= 0.4) {
+        if ($delta >= $thresh) {
             return " <i class='fa-solid fa-arrow-trend-up trend-up'></i>";
         }
-        if ($delta <= -0.4) {
+        if ($delta <= -$thresh) {
             return " <i class='fa-solid fa-arrow-trend-down trend-dn'></i>";
         }
         return " <i class='fa-solid fa-arrow-right trend-st'></i>";
@@ -1036,7 +1194,7 @@ HTML;
         return "<span class='p-ico'><i class='fa-solid fa-plug {$ico}'></i></span><span{$cls}>{$label}</span>";
     }
 
-    // ── E-Auto-Kachel ─────────────────────────────────────────────────────────
+    // ── E-Auto-Kachel ─────────────────────────────────────────────────────────────────────
 
     private function BuildCard_Auto(array $item): string
     {
@@ -1063,12 +1221,22 @@ HTML;
         $isCharging = $chargingID > 0 && IPS_VariableExists($chargingID)
             && (bool)GetValue($chargingID);
 
-        // Restladezeit
+        // Restladezeit (Wert in Sekunden)
         $chargeMin   = '';
         $chargeMinID = (int)($item['ChargeMinID'] ?? 0);
         if ($isCharging && $chargeMinID > 0 && IPS_VariableExists($chargeMinID)) {
-            $min       = (int)GetValue($chargeMinID);
-            $chargeMin = ($min >= 60 ? (floor($min / 60) . 'h ') : '') . ($min % 60) . 'min';
+            $sec       = (int)GetValue($chargeMinID);
+            $min       = (int)round($sec / 60);
+            $chargeMin = ($min >= 60 ? (int)floor($min / 60) . 'h ' : '') . ($min % 60) . 'min';
+        }
+
+        // Ladeleistung kW
+        $chargePowerStr  = '';
+        $chargePowerID   = (int)($item['ChargePowerID'] ?? 0);
+        if ($isCharging && $chargePowerID > 0 && IPS_VariableExists($chargePowerID)) {
+            $watts          = (float)GetValue($chargePowerID);
+            $kw             = round($watts / 1000, 1);
+            $chargePowerStr = str_replace('.', ',', (string)$kw) . ' kW';
         }
 
         // Status
@@ -1099,7 +1267,8 @@ HTML;
             $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-car ico-muted'></i></span><span>{$statusStr}</span></span></div>";
         }
         if ($isCharging) {
-            $chargeTxt = $chargeMin ?: 'Lädt…';
+            $parts     = array_filter([$chargePowerStr, $chargeMin]);
+            $chargeTxt = $parts ? implode(' · ', $parts) : 'Lädt…';
             $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-bolt ico-charging'></i></span><span>{$chargeTxt}</span></span></div>";
         }
         if ($rangeStr) {
@@ -1116,7 +1285,7 @@ HTML;
         return $html;
     }
 
-    // ── Energie/Solar-Kachel ──────────────────────────────────────────────────
+    // ── Energie/Solar-Kachel ──────────────────────────────────────────────────────
 
     private function BuildCard_Energie(array $item): string
     {
@@ -1167,7 +1336,7 @@ HTML;
         return $html;
     }
 
-    // ── Klima/Thermostat-Kachel ───────────────────────────────────────────────
+    // ── Klima/Thermostat-Kachel ─────────────────────────────────────────────────────
 
     private function BuildCard_Klima(array $item): string
     {
@@ -1181,15 +1350,21 @@ HTML;
         $istTemp  = ($tempID > 0     && IPS_VariableExists($tempID))     ? round((float)GetValue($tempID), 1)     : null;
         $sollTemp = ($sollTempID > 0 && IPS_VariableExists($sollTempID)) ? round((float)GetValue($sollTempID), 1) : null;
         $modus    = ($modusID > 0    && IPS_VariableExists($modusID))    ? htmlspecialchars(GetValueFormatted($modusID)) : null;
-        $ventil   = ($ventilID > 0   && IPS_VariableExists($ventilID))   ? (int)GetValue($ventilID)               : null;
+        $lueftermodus = ($ventilID > 0 && IPS_VariableExists($ventilID))
+            ? htmlspecialchars(GetValueFormatted($ventilID)) : null;
 
         $trendIcon = ($tempID > 0 && IPS_VariableExists($tempID)) ? $this->GetTempTrend($tempID) : '';
         $istStr  = $istTemp  !== null ? str_replace('.', ',', (string)$istTemp)  . '°' : '';
         $sollStr = $sollTemp !== null ? str_replace('.', ',', (string)$sollTemp) . '°' : '';
 
         $stateClass = '';
-        if ($istTemp !== null && $sollTemp !== null) {
-            if ($istTemp < $sollTemp - 1) { $stateClass = ' s-warn'; }
+        if ($modus !== null) {
+            $modusLower = mb_strtolower($modus);
+            if (str_contains($modusLower, 'kühl'))     { $stateClass = ' s-charging'; }
+            elseif (str_contains($modusLower, 'heiz')) { $stateClass = ' s-alert'; }
+            elseif (str_contains($modusLower, 'lüft')) { $stateClass = ' s-active'; }
+        } elseif ($istTemp !== null && $sollTemp !== null && $istTemp < $sollTemp - 1) {
+            $stateClass = ' s-warn';
         }
 
         $html  = "<div class='card{$stateClass}'>";
@@ -1205,9 +1380,8 @@ HTML;
         if ($modus) {
             $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-circle-half-stroke ico-muted'></i></span><span>{$modus}</span></span></div>";
         }
-        if ($ventil !== null) {
-            $ventilCls = $ventil > 60 ? 'ico-warn' : 'ico-muted';
-            $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-fan {$ventilCls}'></i></span><span>{$ventil}%</span></span></div>";
+        if ($lueftermodus !== null && $lueftermodus !== '') {
+            $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-fan ico-muted'></i></span><span>{$lueftermodus}</span></span></div>";
         }
 
         $linkID = (int)($item['LinkID'] ?? 0);
@@ -1219,7 +1393,7 @@ HTML;
         return $html;
     }
 
-    // ── Bewässerungs-Kachel ───────────────────────────────────────────────────
+    // ── Bewässerungs-Kachel ─────────────────────────────────────────────────────────
 
     private function BuildCard_Wasser(array $item): string
     {
@@ -1229,11 +1403,21 @@ HTML;
         $nextStartID = (int)($item['NextStartID'] ?? 0);
         $laufzeitID  = (int)($item['LaufzeitID']  ?? 0);
         $bodenID     = (int)($item['BodenID']     ?? 0);
+        $bedarfID    = (int)($item['BedarfID']    ?? 0);
+        $tagesRestID = (int)($item['TagesRestID'] ?? 0);
 
-        $isAktiv  = ($aktivID > 0     && IPS_VariableExists($aktivID))     && (bool)GetValue($aktivID);
-        $nextStr  = ($nextStartID > 0 && IPS_VariableExists($nextStartID)) ? htmlspecialchars(GetValueFormatted($nextStartID)) : null;
-        $laufzeit = ($laufzeitID > 0  && IPS_VariableExists($laufzeitID))  ? (int)GetValue($laufzeitID) : null;
-        $boden    = ($bodenID > 0     && IPS_VariableExists($bodenID))     ? (int)GetValue($bodenID)    : null;
+        $isAktiv   = ($aktivID > 0     && IPS_VariableExists($aktivID))     && (bool)GetValue($aktivID);
+        $nextStr   = ($nextStartID > 0 && IPS_VariableExists($nextStartID)) ? htmlspecialchars(GetValueFormatted($nextStartID)) : null;
+        $laufzeit  = ($laufzeitID > 0  && IPS_VariableExists($laufzeitID))  ? (int)GetValue($laufzeitID)  : null;
+        $boden     = ($bodenID > 0     && IPS_VariableExists($bodenID))     ? (int)GetValue($bodenID)     : null;
+        if ($bedarfID > 0 && IPS_VariableExists($bedarfID)) {
+            $bedarfSec = (int)GetValue($bedarfID);
+            $bedarfMin = (int)round($bedarfSec / 60);
+            $bedarfStr = ($bedarfMin >= 60 ? (int)floor($bedarfMin / 60) . 'h ' : '') . ($bedarfMin % 60) . 'min';
+        } else {
+            $bedarfStr = null;
+        }
+        $tagesRest = ($tagesRestID > 0 && IPS_VariableExists($tagesRestID)) ? (int)GetValue($tagesRestID) : null;
 
         $stateClass = $isAktiv ? ' s-active' : '';
 
@@ -1245,8 +1429,17 @@ HTML;
         $html .= "</div>";
 
         if ($isAktiv && $laufzeit !== null && $laufzeit > 0) {
-            $restStr = ($laufzeit >= 60 ? (floor($laufzeit / 60) . 'h ') : '') . ($laufzeit % 60) . 'min';
+            $restMin = (int)round($laufzeit / 60);
+            $restStr = ($restMin >= 60 ? (int)floor($restMin / 60) . 'h ' : '') . ($restMin % 60) . 'min';
             $html   .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-clock ico-active'></i></span><span>noch {$restStr}</span></span></div>";
+        }
+        if ($tagesRest !== null) {
+            $tagesMin = (int)round($tagesRest / 60);
+            $tagesStr = ($tagesMin >= 60 ? (int)floor($tagesMin / 60) . 'h ' : '') . ($tagesMin % 60) . 'min';
+            $html    .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-hourglass-half ico-muted'></i></span><span>Heute noch: {$tagesStr}</span></span></div>";
+        }
+        if ($bedarfStr !== null) {
+            $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-chart-simple ico-muted'></i></span><span>Bedarf: {$bedarfStr}</span></span></div>";
         }
         if ($nextStr) {
             $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-calendar ico-muted'></i></span><span>{$nextStr}</span></span></div>";

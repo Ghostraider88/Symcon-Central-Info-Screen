@@ -3,7 +3,21 @@
 Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
-## [1.0.0] – 2026-05-11
+## [1.0.2] – 2026-06-24
+
+### Geändert
+- **Klima-Kachel**: Kartenrand-Farbe richtet sich jetzt nach dem Modus-Text (kühlen → blau, heizen → rot, lüften → grün, trocknen → kein Rand)
+- **Klima-Kachel**: „Ventil/Gebläse%" umbenannt in „Lüftermodus" — Anzeige erfolgt jetzt als Freitext-String via `GetValueFormatted()` statt als Prozentzahl
+
+## [1.0.1] – 2026-06-05
+
+### Geändert
+- Mindestversion auf IP-Symcon **8.2** angehoben (`openObject()` ist erst ab 8.2 verfügbar)
+- Externe Font-Awesome-CDN-Abhängigkeit entfernt; Icons werden jetzt offline über Symcon-kompatible Symbole dargestellt (`/icons.js` + CSS-Fallback)
+- HTML-Erzeugung für klickbare Bereichsheader bereinigt (CSS-Klasse und `onclick`-Attribut sauber getrennt)
+- `library.json`: Metadaten korrigiert (Kompatibilitätsversion, Release-Datum, Build-Nummer)
+
+## [1.0.0] – 2026-05-12
 
 Erstes öffentliches Release.
 

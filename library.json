@@ -4,9 +4,9 @@
     "name": "Central Info Screen",
     "url": "https://github.com/Ghostraider88/Symcon-Central-Info-Screen",
     "compatibility": {
-        "version": "8.1"
+        "version": "8.2"
     },
-    "version": "1.0.0",
-    "build": 1,
-    "date": 1747008000
+    "version": "1.0.2",
+    "build": 3,
+    "date": 1750723200
 }
