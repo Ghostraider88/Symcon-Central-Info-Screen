@@ -3,6 +3,12 @@
 Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
+## [1.0.2] – 2026-06-24
+
+### Geändert
+- **Klima-Kachel**: Kartenrand-Farbe richtet sich jetzt nach dem Modus-Text (kühlen → blau, heizen → rot, lüften → grün, trocknen → kein Rand)
+- **Klima-Kachel**: „Ventil/Gebläse%" umbenannt in „Lüftermodus" — Anzeige erfolgt jetzt als Freitext-String via `GetValueFormatted()` statt als Prozentzahl
+
 ## [1.0.1] – 2026-06-05
 
 ### Geändert

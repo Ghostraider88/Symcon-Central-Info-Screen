@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 class HomeScreen extends IPSModuleStrict
 {
-    private const MODULE_VERSION = '1.0.1';
+    private const MODULE_VERSION = '1.0.2';
 
     // -------------------------------------------------------------------------
     // Lifecycle
@@ -505,7 +505,7 @@ HTML;
                             ['caption' => 'Ist-Temp (°C)',   'name' => 'TempID',    'width' => '110px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
                             ['caption' => 'Soll-Temp (°C)',  'name' => 'SollTempID','width' => '110px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
                             ['caption' => 'Modus (Text)',    'name' => 'ModusID',   'width' => '110px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
-                            ['caption' => 'Ventil/Gebläse%','name' => 'VentilID',  'width' => '110px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'Lüftermodus (String)', 'name' => 'VentilID', 'width' => '110px', 'add' => 0, 'edit' => ['type' => 'SelectVariable']],
                         ],
                     ]],
                 ],
@@ -1350,15 +1350,21 @@ HTML;
         $istTemp  = ($tempID > 0     && IPS_VariableExists($tempID))     ? round((float)GetValue($tempID), 1)     : null;
         $sollTemp = ($sollTempID > 0 && IPS_VariableExists($sollTempID)) ? round((float)GetValue($sollTempID), 1) : null;
         $modus    = ($modusID > 0    && IPS_VariableExists($modusID))    ? htmlspecialchars(GetValueFormatted($modusID)) : null;
-        $ventil   = ($ventilID > 0   && IPS_VariableExists($ventilID))   ? (int)GetValue($ventilID)               : null;
+        $lueftermodus = ($ventilID > 0 && IPS_VariableExists($ventilID))
+            ? htmlspecialchars(GetValueFormatted($ventilID)) : null;
 
         $trendIcon = ($tempID > 0 && IPS_VariableExists($tempID)) ? $this->GetTempTrend($tempID) : '';
         $istStr  = $istTemp  !== null ? str_replace('.', ',', (string)$istTemp)  . '°' : '';
         $sollStr = $sollTemp !== null ? str_replace('.', ',', (string)$sollTemp) . '°' : '';
 
         $stateClass = '';
-        if ($istTemp !== null && $sollTemp !== null) {
-            if ($istTemp < $sollTemp - 1) { $stateClass = ' s-warn'; }
+        if ($modus !== null) {
+            $modusLower = mb_strtolower($modus);
+            if (str_contains($modusLower, 'kühl'))     { $stateClass = ' s-charging'; }
+            elseif (str_contains($modusLower, 'heiz')) { $stateClass = ' s-alert'; }
+            elseif (str_contains($modusLower, 'lüft')) { $stateClass = ' s-active'; }
+        } elseif ($istTemp !== null && $sollTemp !== null && $istTemp < $sollTemp - 1) {
+            $stateClass = ' s-warn';
         }
 
         $html  = "<div class='card{$stateClass}'>";
@@ -1374,9 +1380,8 @@ HTML;
         if ($modus) {
             $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-circle-half-stroke ico-muted'></i></span><span>{$modus}</span></span></div>";
         }
-        if ($ventil !== null) {
-            $ventilCls = $ventil > 60 ? 'ico-warn' : 'ico-muted';
-            $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-fan {$ventilCls}'></i></span><span>{$ventil}%</span></span></div>";
+        if ($lueftermodus !== null && $lueftermodus !== '') {
+            $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-fan ico-muted'></i></span><span>{$lueftermodus}</span></span></div>";
         }
 
         $linkID = (int)($item['LinkID'] ?? 0);
