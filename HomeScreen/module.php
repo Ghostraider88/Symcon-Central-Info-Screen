@@ -1385,10 +1385,10 @@ HTML;
         if ($sollStr) {
             $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-sliders ico-muted'></i></span><span>Soll: {$sollStr}</span></span></div>";
         }
-        if ($statusDisplay !== null && $statusDisplay !== '') {
-            $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-circle-half-stroke ico-muted'></i></span><span>{$statusDisplay}</span></span></div>";
-        } elseif ($modus) {
-            $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-circle-half-stroke ico-muted'></i></span><span>{$modus}</span></span></div>";
+        $modusLine = array_filter([$modus, $statusDisplay], fn($v) => $v !== null && $v !== '');
+        if ($modusLine) {
+            $modusText = implode(' · ', $modusLine);
+            $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-circle-half-stroke ico-muted'></i></span><span>{$modusText}</span></span></div>";
         }
         if ($lueftermodus !== null && $lueftermodus !== '') {
             $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-fan ico-muted'></i></span><span>{$lueftermodus}</span></span></div>";
