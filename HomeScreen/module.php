@@ -203,6 +203,7 @@ class HomeScreen extends IPSModuleStrict
   .s-warn{border-left-color:#ff9800;}
   .s-charging{border-left-color:#2196f3;}
   .s-active{border-left-color:#4caf50;}
+  .s-dehumid{border-left-color:#00bcd4;}
   .c-head{display:flex;justify-content:space-between;align-items:baseline;gap:4px;margin-bottom:4px;}
   .c-name{font-weight:500;color:var(--content-color);font-size:0.95em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .c-temp{font-weight:500;font-size:0.90em;white-space:nowrap;flex-shrink:0;}
@@ -1360,9 +1361,10 @@ HTML;
         $stateClass = '';
         if ($modus !== null) {
             $modusLower = mb_strtolower($modus);
-            if (str_contains($modusLower, 'kühl'))     { $stateClass = ' s-charging'; }
-            elseif (str_contains($modusLower, 'heiz')) { $stateClass = ' s-alert'; }
-            elseif (str_contains($modusLower, 'lüft')) { $stateClass = ' s-active'; }
+            if (str_contains($modusLower, 'kühl'))       { $stateClass = ' s-charging'; }
+            elseif (str_contains($modusLower, 'heiz'))   { $stateClass = ' s-alert'; }
+            elseif (str_contains($modusLower, 'entfeuc')) { $stateClass = ' s-dehumid'; }
+            // 'lüften' und 'automatik' → kein Rand (transparent)
         } elseif ($istTemp !== null && $sollTemp !== null && $istTemp < $sollTemp - 1) {
             $stateClass = ' s-warn';
         }
