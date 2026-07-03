@@ -204,6 +204,7 @@ class HomeScreen extends IPSModuleStrict
   .s-charging{border-left-color:#2196f3;}
   .s-active{border-left-color:#4caf50;}
   .s-dehumid{border-left-color:#00bcd4;}
+  .s-inactive{border-left-color:#9e9e9e;}
   .c-head{display:flex;justify-content:space-between;align-items:baseline;gap:4px;margin-bottom:4px;}
   .c-name{font-weight:500;color:var(--content-color);font-size:0.95em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .c-temp{font-weight:500;font-size:0.90em;white-space:nowrap;flex-shrink:0;}
@@ -506,7 +507,7 @@ HTML;
                             ['caption' => 'Ist-Temp (°C)',   'name' => 'TempID',    'width' => '110px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
                             ['caption' => 'Soll-Temp (°C)',  'name' => 'SollTempID','width' => '110px', 'add' => 0,       'edit' => ['type' => 'SelectVariable']],
                             ['caption' => 'Modus (Text)',         'name' => 'ModusID',   'width' => '110px', 'add' => 0, 'edit' => ['type' => 'SelectVariable']],
-                            ['caption' => 'Status (String)',      'name' => 'StatusID',  'width' => '110px', 'add' => 0, 'edit' => ['type' => 'SelectVariable']],
+                            ['caption' => 'An/Aus (Bool)',        'name' => 'AktivID',   'width' => '110px', 'add' => 0, 'edit' => ['type' => 'SelectVariable']],
                             ['caption' => 'Lüftermodus (String)', 'name' => 'VentilID',  'width' => '110px', 'add' => 0, 'edit' => ['type' => 'SelectVariable']],
                         ],
                     ]],
@@ -1347,15 +1348,13 @@ HTML;
         $tempID     = (int)($item['TempID']     ?? 0);
         $sollTempID = (int)($item['SollTempID'] ?? 0);
         $modusID    = (int)($item['ModusID']    ?? 0);
-        $statusID   = (int)($item['StatusID']   ?? 0);
+        $aktivID    = (int)($item['AktivID']    ?? 0);
         $ventilID   = (int)($item['VentilID']   ?? 0);
 
         $istTemp  = ($tempID > 0     && IPS_VariableExists($tempID))     ? round((float)GetValue($tempID), 1)     : null;
         $sollTemp = ($sollTempID > 0 && IPS_VariableExists($sollTempID)) ? round((float)GetValue($sollTempID), 1) : null;
         $modus    = ($modusID > 0    && IPS_VariableExists($modusID))    ? htmlspecialchars(GetValueFormatted($modusID)) : null;
-
-        $statusRaw     = ($statusID > 0 && IPS_VariableExists($statusID)) ? (string)GetValue($statusID) : null;
-        $statusDisplay = ($statusID > 0 && IPS_VariableExists($statusID)) ? htmlspecialchars(GetValueFormatted($statusID)) : null;
+        $istAktiv = ($aktivID > 0    && IPS_VariableExists($aktivID))    ? (bool)GetValue($aktivID) : null;
 
         $lueftermodus = ($ventilID > 0 && IPS_VariableExists($ventilID))
             ? htmlspecialchars(GetValueFormatted($ventilID)) : null;
@@ -1364,15 +1363,18 @@ HTML;
         $istStr  = $istTemp  !== null ? str_replace('.', ',', (string)$istTemp)  . '°' : '';
         $sollStr = $sollTemp !== null ? str_replace('.', ',', (string)$sollTemp) . '°' : '';
 
-        // Border color driven by Status raw value (what the unit actually does)
+        // Randfarbe abhängig von Betriebsmodus UND An/Aus-Zustand
         $stateClass = '';
-        if ($statusRaw !== null) {
-            $stateClass = match($statusRaw) {
-                'heating'  => ' s-alert',
-                'cooling'  => ' s-charging',
-                'drying'   => ' s-dehumid',
-                default    => '',  // off, idle, fan, automatic → kein Rand
-            };
+        if ($istAktiv === false) {
+            $stateClass = ' s-inactive';
+        } elseif ($modus !== null) {
+            $modusLower = mb_strtolower($modus);
+            if (str_contains($modusLower, 'kühl'))        { $stateClass = ' s-charging'; }
+            elseif (str_contains($modusLower, 'heiz'))    { $stateClass = ' s-alert'; }
+            elseif (str_contains($modusLower, 'entfeuc'))  { $stateClass = ' s-dehumid'; }
+            // 'lüften' und 'automatik' → kein Rand (transparent)
+        } elseif ($istTemp !== null && $sollTemp !== null && $istTemp < $sollTemp - 1) {
+            $stateClass = ' s-warn';
         }
 
         $html  = "<div class='card{$stateClass}'>";
@@ -1385,10 +1387,8 @@ HTML;
         if ($sollStr) {
             $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-sliders ico-muted'></i></span><span>Soll: {$sollStr}</span></span></div>";
         }
-        $modusLine = array_filter([$modus, $statusDisplay], fn($v) => $v !== null && $v !== '');
-        if ($modusLine) {
-            $modusText = implode(' · ', $modusLine);
-            $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-circle-half-stroke ico-muted'></i></span><span>{$modusText}</span></span></div>";
+        if ($modus) {
+            $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-circle-half-stroke ico-muted'></i></span><span>{$modus}</span></span></div>";
         }
         if ($lueftermodus !== null && $lueftermodus !== '') {
             $html .= "<div class='p-row'><span class='p-cell'><span class='p-ico'><i class='fa-solid fa-fan ico-muted'></i></span><span>{$lueftermodus}</span></span></div>";
